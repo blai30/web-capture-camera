@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  weather-dash:
+    build: .
+    container_name: weather-dash
+    ports:
+      - '8080:80'
+    restart: unless-stopped
+    environment:
+      - VITE_WEATHER_LAT=${VITE_WEATHER_LAT:-40.7128}
+      - VITE_WEATHER_LON=${VITE_WEATHER_LON:-74.006}
+      - VITE_WEATHER_NAME=${VITE_WEATHER_NAME:-New York}
+      - VITE_WEATHER_TIMEZONE=${VITE_WEATHER_TIMEZONE:-America/New_York}

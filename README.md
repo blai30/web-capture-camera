@@ -1,6 +1,6 @@
 # weather-dash
 
-A live weather dashboard 
+A live weather dashboard
 
 ## Quick Start
 
