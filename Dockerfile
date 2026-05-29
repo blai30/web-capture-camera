@@ -59,6 +59,6 @@ COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/tsconfig.server.json ./tsconfig.json
 COPY package.json ./
 
-EXPOSE 3000 8080 554 3702/udp
+EXPOSE 5173 8080 554 3702/udp
 ENV NODE_ENV=production
 CMD ["node", "--import", "tsx/esm", "src/server/index.ts"]

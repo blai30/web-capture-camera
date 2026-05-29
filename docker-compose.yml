@@ -9,13 +9,13 @@ services:
         - VITE_WEATHER_TIMEZONE=${VITE_WEATHER_TIMEZONE}
     container_name: weather-dash
     ports:
-      - '3000:3000' # SPA + HTTP
+      - '5173:5173' # SPA + HTTP
       - '8000:8000' # ONVIF SOAP
       - '554:554' # RTSP
       - '3702:3702/udp' # WS-Discovery
     restart: unless-stopped
     environment:
-      - SERVER_PORT=3000
+      - SERVER_PORT=5173
       - RTSP_PORT=554
       - WS_DISCOVERY_PORT=3702
       - FRAME_RATE=${FRAME_RATE:-5}

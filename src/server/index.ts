@@ -10,7 +10,7 @@ import { startWsDiscovery } from '@/server/wsdiscovery'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
-const PORT = Number(process.env.SERVER_PORT ?? 3000)
+const PORT = Number(process.env.SERVER_PORT ?? 5173)
 const RTSP_PORT = Number(process.env.RTSP_PORT ?? 554)
 const WS_DISCOVERY_PORT = Number(process.env.WS_DISCOVERY_PORT ?? 3702)
 const FRAME_RATE = Number(process.env.FRAME_RATE ?? 5)
