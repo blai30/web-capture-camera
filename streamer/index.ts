@@ -46,12 +46,12 @@ const httpServer = createServer((req: IncomingMessage, res: ServerResponse) => {
 
   // Serve runtime config for the dashboard
   if (pathWithoutQuery === '/config.json') {
-    const lat = parseFloat(process.env.WEATHER_LAT ?? '')
-    const lon = parseFloat(process.env.WEATHER_LON ?? '')
+    const lat = parseFloat(import.meta.env.VITE_WEATHER_LAT ?? '')
+    const lon = parseFloat(import.meta.env.VITE_WEATHER_LON ?? '')
     const config = {
       latitude: isNaN(lat) ? DEFAULT_LAT : lat,
       longitude: isNaN(lon) ? DEFAULT_LON : lon,
-      name: process.env.WEATHER_NAME ?? DEFAULT_NAME,
+      name: import.meta.env.VITE_WEATHER_NAME ?? DEFAULT_NAME,
     }
     res.writeHead(200, { 'Content-Type': 'application/json' })
     res.end(JSON.stringify(config))

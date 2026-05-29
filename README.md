@@ -25,9 +25,9 @@ cp .env.example .env
 Edit `.env` with your coordinates:
 
 ```env
-WEATHER_LAT=40.7128
-WEATHER_LON=-74.006
-WEATHER_NAME=New York
+VITE_WEATHER_LAT=40.7128
+VITE_WEATHER_LON=-74.006
+VITE_WEATHER_NAME=New York
 ```
 
 ### 2. Build & Run

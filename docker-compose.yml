@@ -23,9 +23,9 @@ services:
       - FRAME_RATE=${FRAME_RATE:-5}
       - RTSP_URL=rtsp://mediamtx:8554/weather
       - REFRESH_INTERVAL=${REFRESH_INTERVAL:-600000}
-      - WEATHER_LAT=${WEATHER_LAT:-40.7128}
-      - WEATHER_LON=${WEATHER_LON:--74.006}
-      - WEATHER_NAME=${WEATHER_NAME:-New York}
+      - VITE_WEATHER_LAT=${VITE_WEATHER_LAT:-40.7128}
+      - VITE_WEATHER_LON=${VITE_WEATHER_LON:--74.006}
+      - VITE_WEATHER_NAME=${VITE_WEATHER_NAME:-New York}
       - PLAYWRIGHT_BROWSERS_PATH=/root/.cache/ms-playwright
     # Expose for local debugging (optional)
     # ports:

@@ -44,7 +44,7 @@ export interface LocationConfig {
 }
 
 export const DEFAULT_LOCATION: LocationConfig = {
-  latitude: 40.7128,
-  longitude: -74.006,
-  name: 'New York',
+  latitude: import.meta.env.VITE_WEATHER_LAT || 40.7128,
+  longitude: import.meta.env.VITE_WEATHER_LON || -74.006,
+  name: import.meta.env.VITE_WEATHER_NAME || 'New York',
 }
