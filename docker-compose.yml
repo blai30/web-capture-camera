@@ -1,14 +1,28 @@
-version: '3.8'
-
 services:
   weather-dash:
-    build: .
+    build:
+      context: .
+      args:
+        - VITE_WEATHER_LAT=${VITE_WEATHER_LAT:-37.6688}
+        - VITE_WEATHER_LON=${VITE_WEATHER_LON:--122.0810}
+        - VITE_WEATHER_NAME=${VITE_WEATHER_NAME:-Hayward, CA}
+        - VITE_WEATHER_TIMEZONE=${VITE_WEATHER_TIMEZONE:-America/Los_Angeles}
     container_name: weather-dash
     ports:
-      - '8080:80'
+      - '3000:3000'    # SPA + HTTP
+      - '8000:8000'    # ONVIF SOAP
+      - '554:554'      # RTSP
+      - '3702:3702/udp' # WS-Discovery
     restart: unless-stopped
     environment:
-      - VITE_WEATHER_LAT=${VITE_WEATHER_LAT:-40.7128}
-      - VITE_WEATHER_LON=${VITE_WEATHER_LON:-74.006}
-      - VITE_WEATHER_NAME=${VITE_WEATHER_NAME:-New York}
-      - VITE_WEATHER_TIMEZONE=${VITE_WEATHER_TIMEZONE:-America/New_York}
+      - SERVER_PORT=3000
+      - RTSP_PORT=554
+      - WS_DISCOVERY_PORT=3702
+      - FRAME_RATE=${FRAME_RATE:-5}
+      - ONVIF_HOST=${ONVIF_HOST:-0.0.0.0}
+      - ONVIF_DEVICE_NAME=${ONVIF_DEVICE_NAME:-Weather Dashboard Camera}
+    # Give extra memory for Playwright + FFmpeg
+    deploy:
+      resources:
+        limits:
+          memory: 2G
