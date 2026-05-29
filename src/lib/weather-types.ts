@@ -1,6 +1,6 @@
 export type WeatherCode = number
 
-export interface CurrentWeather {
+export type CurrentWeather = {
   temperature: number
   apparentTemperature: number
   weatherCode: WeatherCode
@@ -12,14 +12,14 @@ export interface CurrentWeather {
   uvIndex: number
 }
 
-export interface HourlyEntry {
+export type HourlyEntry = {
   time: string
   temperature: number
   weatherCode: WeatherCode
   precipitationProbability: number
 }
 
-export interface DailyEntry {
+export type DailyEntry = {
   date: string
   temperatureMax: number
   temperatureMin: number
@@ -29,7 +29,7 @@ export interface DailyEntry {
   sunset: string
 }
 
-export interface WeatherData {
+export type WeatherData = {
   current: CurrentWeather
   hourly: HourlyEntry[]
   daily: DailyEntry[]
@@ -37,14 +37,8 @@ export interface WeatherData {
   updatedAt: Date
 }
 
-export interface LocationConfig {
+export type LocationConfig = {
   latitude: number
   longitude: number
   name: string
-}
-
-export const DEFAULT_LOCATION: LocationConfig = {
-  latitude: import.meta.env.VITE_WEATHER_LAT || 40.7128,
-  longitude: import.meta.env.VITE_WEATHER_LON || -74.006,
-  name: import.meta.env.VITE_WEATHER_NAME || 'New York',
 }

@@ -5,29 +5,18 @@ import type {
   DailyEntry,
   LocationConfig,
 } from '@/lib/weather-types'
-import { DEFAULT_LOCATION } from '@/lib/weather-types'
 
 const CACHE_DURATION_MS = 10 * 60 * 1000 // 10 minutes
 
 let cachedData: WeatherData | null = null
 let cachedAt = 0
-let cachedLocation: LocationConfig = DEFAULT_LOCATION
 
 async function fetchConfig(): Promise<LocationConfig> {
-  try {
-    const res = await fetch('/config.json')
-    if (res.ok) {
-      const config = await res.json()
-      return {
-        latitude: config.latitude,
-        longitude: config.longitude,
-        name: config.name,
-      }
-    }
-  } catch {
-    // Fall through to default
+  return {
+    latitude: import.meta.env.VITE_WEATHER_LAT || 40.7128,
+    longitude: import.meta.env.VITE_WEATHER_LON || -74.006,
+    name: import.meta.env.VITE_WEATHER_NAME || 'New York',
   }
-  return DEFAULT_LOCATION
 }
 
 async function fetchFromOpenMeteo(location: LocationConfig): Promise<WeatherData> {
@@ -96,20 +85,14 @@ async function fetchFromOpenMeteo(location: LocationConfig): Promise<WeatherData
 export async function getWeatherData(): Promise<WeatherData> {
   const location = await fetchConfig()
 
-  // Use cache if still valid and location hasn't changed
+  // Use cache if still valid
   const now = Date.now()
-  if (
-    cachedData &&
-    now - cachedAt < CACHE_DURATION_MS &&
-    cachedLocation.latitude === location.latitude &&
-    cachedLocation.longitude === location.longitude
-  ) {
+  if (cachedData && now - cachedAt < CACHE_DURATION_MS) {
     return cachedData
   }
 
   const data = await fetchFromOpenMeteo(location)
   cachedData = data
   cachedAt = now
-  cachedLocation = location
   return data
 }
