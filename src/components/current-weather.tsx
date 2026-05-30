@@ -44,16 +44,9 @@ export function CurrentWeather({ current, class: className }: Props) {
   const condition = CONDITION_LABELS[current.weatherCode] ?? 'Unknown'
 
   return (
-    <div class={clsx('flex flex-col justify-center', className)}>
-      <div class="mb-6 flex items-center gap-4">
-        <Icon size={40} class="shrink-0" strokeWidth={1.5} />
-        <span class="text-lg">{condition}</span>
-      </div>
-
-      <div class="mb-6">
-        <span class="text-9xl">{Math.round(current.temperature)}</span>
-        <span class="text-4xl">°F</span>
-      </div>
+    <div class={clsx('flex items-center gap-12', className)}>
+      <Icon class="size-80 shrink-0" strokeWidth={1.5} />
+      <span class="text-8xl">{condition}</span>
     </div>
   )
 }

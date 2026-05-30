@@ -1,3 +1,4 @@
+import { CurrentTemperature } from '@/components/current-temperature'
 import { CurrentWeather } from '@/components/current-weather'
 import { useWeather } from '@/hooks/use-weather'
 
@@ -27,9 +28,8 @@ export function Dashboard() {
       <div class="aspect-video w-full p-6">
         <main class="grid size-full grid-cols-3 grid-rows-2 gap-6">
           {/* Current conditions and temperature */}
-          <div class="col-span-3 border">
-            <CurrentWeather current={data.current} class="col-span-2" />
-          </div>
+          <CurrentWeather current={data.current} class="col-span-2" />
+          <CurrentTemperature current={data.current} class="col-span-1" />
           {/* 12 hour forecast conditions chart */}
           <div class="col-span-3 border">12-hour forecast</div>
         </main>
