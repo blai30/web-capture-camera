@@ -36,6 +36,7 @@ async function fetchFromOpenMeteo(location: LocationConfig): Promise<WeatherData
   )
   url.searchParams.set('timezone', 'auto')
   url.searchParams.set('forecast_days', '7')
+  url.searchParams.set('temperature_unit', 'fahrenheit')
 
   const res = await fetch(url.toString())
   if (!res.ok) {

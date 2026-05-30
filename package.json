@@ -5,9 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:server": "tsx src/server/index.ts",
-    "build": "tsc -b && vite build",
-    "build:server": "tsc -b tsconfig.server.json",
+    "build": "vite build",
     "preview": "vite preview",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",

@@ -1,13 +1,15 @@
+import clsx from 'clsx/lite'
+
 import { getWeatherIcon } from '@/components/weather-icon'
 import { type CurrentWeather } from '@/lib/weather-types'
 
 const CONDITION_LABELS: Record<number, string> = {
-  0: 'Clear sky',
-  1: 'Mainly clear',
+  0: 'Sunny',
+  1: 'Mostly sunny',
   2: 'Partly cloudy',
-  3: 'Overcast',
-  45: 'Foggy',
-  48: 'Rime fog',
+  3: 'Cloudy',
+  45: 'Light fog',
+  48: 'Foggy',
   51: 'Light drizzle',
   53: 'Drizzle',
   55: 'Dense drizzle',
@@ -37,41 +39,20 @@ type Props = {
   class?: string
 }
 
-export function CurrentWeather({ current, class: cls }: Props) {
+export function CurrentWeather({ current, class: className }: Props) {
   const Icon = getWeatherIcon(current.weatherCode)
-  const label = CONDITION_LABELS[current.weatherCode] ?? 'Unknown'
+  const condition = CONDITION_LABELS[current.weatherCode] ?? 'Unknown'
 
   return (
-    <div class={`flex flex-col justify-center ${cls ?? ''}`}>
+    <div class={clsx('flex flex-col justify-center', className)}>
       <div class="mb-6 flex items-center gap-4">
-        <Icon size={40} class="shrink-0 text-slate-400" strokeWidth={1.5} />
-        <span class="text-lg text-slate-400">{label}</span>
+        <Icon size={40} class="shrink-0" strokeWidth={1.5} />
+        <span class="text-lg">{condition}</span>
       </div>
 
       <div class="mb-6">
-        <span class="text-[7rem] leading-none font-light tracking-tighter text-white">
-          {Math.round(current.temperature)}
-        </span>
-        <span class="text-4xl font-light text-slate-500">°C</span>
-      </div>
-
-      <div class="flex items-center gap-6 text-sm text-slate-500">
-        <div>
-          <span class="text-slate-400">Feels like </span>
-          {Math.round(current.apparentTemperature)}°
-        </div>
-        <div>
-          <span class="text-slate-400">Humidity </span>
-          {current.humidity}%
-        </div>
-        <div>
-          <span class="text-slate-400">Wind </span>
-          {Math.round(current.windSpeed)} km/h
-        </div>
-        <div>
-          <span class="text-slate-400">Precip </span>
-          {current.precipitationProbability}%
-        </div>
+        <span class="text-9xl">{Math.round(current.temperature)}</span>
+        <span class="text-4xl">°F</span>
       </div>
     </div>
   )

@@ -1,3 +1,4 @@
+import { CurrentWeather } from '@/components/current-weather'
 import { useWeather } from '@/hooks/use-weather'
 
 export function Dashboard() {
@@ -23,14 +24,14 @@ export function Dashboard() {
 
   return (
     <div class="flex h-screen items-start">
-      <div class="aspect-video w-full rounded-2xl bg-zinc-950 p-6">
+      <div class="aspect-video w-full p-6">
         <main class="grid size-full grid-cols-3 grid-rows-2 gap-6">
           {/* Current conditions and temperature */}
           <div class="col-span-3 border">
+            <CurrentWeather current={data.current} class="col-span-2" />
           </div>
           {/* 12 hour forecast conditions chart */}
-          <div class="col-span-3 border">
-          </div>
+          <div class="col-span-3 border">12-hour forecast</div>
         </main>
       </div>
     </div>
