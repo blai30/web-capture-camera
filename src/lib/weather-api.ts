@@ -52,8 +52,15 @@ async function fetchFromOpenMeteo(location: LocationConfig): Promise<WeatherData
     windSpeed: json.current.wind_speed_10m,
     windDirection: json.current.wind_direction_10m,
     pressure: json.current.surface_pressure,
-    visibility: 0, // Not available in free tier
     uvIndex: json.current.uv_index,
+    precipitationProbability: 0,
+  }
+
+  // Derive current precipitation probability from hourly data
+  const now = new Date().toISOString().slice(0, 13)
+  const currentHourIndex = json.hourly.time.findIndex((t: string) => t >= now)
+  if (currentHourIndex >= 0) {
+    current.precipitationProbability = json.hourly.precipitation_probability[currentHourIndex] ?? 0
   }
 
   const hourly: HourlyEntry[] = json.hourly.time.map((time: string, i: number) => ({

@@ -8,8 +8,8 @@ export type CurrentWeather = {
   windSpeed: number
   windDirection: number
   pressure: number
-  visibility: number
   uvIndex: number
+  precipitationProbability: number
 }
 
 export type HourlyEntry = {
@@ -41,10 +41,4 @@ export type LocationConfig = {
   latitude: number
   longitude: number
   name: string
-}
-
-export function getWindDirection(degrees: number): string {
-  const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW']
-  const index = Math.round(degrees / 45) % 8
-  return directions[index]
 }

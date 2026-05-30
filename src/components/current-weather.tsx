@@ -1,53 +1,77 @@
-import { Clock1, Droplets, Gauge, Wind } from 'lucide-preact'
-
 import { getWeatherIcon } from '@/components/weather-icon'
-import { getWindDirection, type CurrentWeather } from '@/lib/weather-types'
+import { type CurrentWeather } from '@/lib/weather-types'
 
-type CurrentWeatherProps = {
+const CONDITION_LABELS: Record<number, string> = {
+  0: 'Clear sky',
+  1: 'Mainly clear',
+  2: 'Partly cloudy',
+  3: 'Overcast',
+  45: 'Foggy',
+  48: 'Rime fog',
+  51: 'Light drizzle',
+  53: 'Drizzle',
+  55: 'Dense drizzle',
+  56: 'Freezing drizzle',
+  57: 'Heavy freezing drizzle',
+  61: 'Light rain',
+  63: 'Rain',
+  65: 'Heavy rain',
+  66: 'Freezing rain',
+  67: 'Heavy freezing rain',
+  71: 'Light snow',
+  73: 'Snow',
+  75: 'Heavy snow',
+  77: 'Snow grains',
+  80: 'Light showers',
+  81: 'Showers',
+  82: 'Violent showers',
+  85: 'Light snow showers',
+  86: 'Heavy snow showers',
+  95: 'Thunderstorm',
+  96: 'Thunderstorm with hail',
+  99: 'Severe thunderstorm',
+}
+
+type Props = {
   current: CurrentWeather
+  class?: string
 }
 
-export function CurrentWeather({ current }: CurrentWeatherProps) {
-  const WeatherIcon = getWeatherIcon(current.weatherCode)
+export function CurrentWeather({ current, class: cls }: Props) {
+  const Icon = getWeatherIcon(current.weatherCode)
+  const label = CONDITION_LABELS[current.weatherCode] ?? 'Unknown'
 
   return (
-    <div class="flex items-start gap-8 p-8">
-      <div class="flex shrink-0 items-center gap-6">
-        <WeatherIcon size={80} class="text-slate-400" strokeWidth={1.5} />
-        <div class="text-[10rem] leading-none font-light tracking-tighter">
+    <div class={`flex flex-col justify-center ${cls ?? ''}`}>
+      <div class="mb-6 flex items-center gap-4">
+        <Icon size={40} class="shrink-0 text-slate-400" strokeWidth={1.5} />
+        <span class="text-lg text-slate-400">{label}</span>
+      </div>
+
+      <div class="mb-6">
+        <span class="text-[7rem] leading-none font-light tracking-tighter text-white">
           {Math.round(current.temperature)}
-          <span class="text-6xl text-slate-500">°C</span>
+        </span>
+        <span class="text-4xl font-light text-slate-500">°C</span>
+      </div>
+
+      <div class="flex items-center gap-6 text-sm text-slate-500">
+        <div>
+          <span class="text-slate-400">Feels like </span>
+          {Math.round(current.apparentTemperature)}°
         </div>
-      </div>
-
-      <div class="grid grid-cols-2 gap-x-12 gap-y-3 text-left">
-        <Stat label="Feels Like" value={`${Math.round(current.apparentTemperature)}°C`} />
-        <Stat label="Humidity" value={`${current.humidity}%`} icon={Droplets} />
-        <Stat
-          label="Wind"
-          value={`${Math.round(current.windSpeed)} km/h ${getWindDirection(current.windDirection)}`}
-          icon={Wind}
-        />
-        <Stat label="UV Index" value={String(current.uvIndex)} />
-        <Stat label="Pressure" value={`${Math.round(current.pressure)} hPa`} icon={Gauge} />
-      </div>
-    </div>
-  )
-}
-
-type StatProps = {
-  label: string
-  value: string
-  icon?: typeof Clock1
-}
-
-function Stat({ label, value, icon: Icon }: StatProps) {
-  return (
-    <div class="flex items-center gap-3">
-      {Icon && <Icon size={18} class="shrink-0 text-slate-500" strokeWidth={1.5} />}
-      <div>
-        <div class="text-sm tracking-wider text-slate-500 uppercase">{label}</div>
-        <div class="text-xl font-medium">{value}</div>
+        <div>
+          <span class="text-slate-400">Humidity </span>
+          {current.humidity}%
+        </div>
+        <div>
+          <span class="text-slate-400">Wind </span>
+          {Math.round(current.windSpeed)} km/h
+        </div>
+        <div>
+          <span class="text-slate-400">Precip </span>
+          {current.precipitationProbability}%
+        </div>
       </div>
     </div>
   )
