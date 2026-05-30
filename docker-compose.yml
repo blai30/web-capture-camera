@@ -14,23 +14,10 @@ services:
     environment:
       - SERVER_PORT=5173
       - FRAME_RATE=${FRAME_RATE:-5}
-      - MEDIAMTX_RTSP_URL=rtsp://mediamtx:8554/live
+      # Point at host MediaMTX (Tony runs separately in its repo)
+      - MEDIAMTX_RTSP_URL=rtsp://127.0.0.1:8554/weather-dash_main
     # Give extra memory for Playwright + FFmpeg
     deploy:
       resources:
         limits:
           memory: 2G
-    depends_on:
-      - mediamtx
-
-  mediamtx:
-    image: bluenviron/rtsp-simple-server:latest
-    container_name: mediamtx
-    ports:
-      - '8554:8554' # RTSP
-      - '8888:8888' # HTTP API
-      - '8889:8889/tcp' # WebRTC
-      - '8889:8889/udp' # WebRTC
-    restart: unless-stopped
-    volumes:
-      - ./mediamtx.yml:/mediamtx.yml:ro

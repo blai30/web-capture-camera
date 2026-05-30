@@ -37,15 +37,9 @@ export async function startCapturePipeline(
   console.log('Playwright: SPA loaded')
 
   // Connect to CDP session for screencast
-  const cdpSession = await context.newCDPSession(page)
-
-  // Enable screencast
-  await cdpSession.send('Page.startScreencast', {
-    format: 'jpeg',
-    quality: 80,
-    everyNthFrame: 1,
-  })
-
+  // We'll capture the SPA by taking periodic screenshots (JPEG) instead of
+  // relying on the Chrome screencast CDP event, which can be unreliable in
+  // some headless environments. This is simpler and more deterministic.
   // FFmpeg process: JPEG pipe → RTSP push to MediaMTX
   const ffmpeg = spawn(
     'ffmpeg',
@@ -83,21 +77,31 @@ export async function startCapturePipeline(
 
   const stdin = ffmpeg.stdin!
 
-  // Handle screencast frames
-  cdpSession.on('Page.screencastFrame', async (event) => {
-    try {
-      // Convert base64 to binary
-      const frameBuffer = Buffer.from(event.data, 'base64')
-      stdin.write(frameBuffer)
+  // Screenshot-based capture loop
+  let capturing = true
+  let frameIndex = 0
 
-      // Acknowledge frame to keep stream flowing
-      await cdpSession.send('Page.screencastFrameAck', {
-        sessionId: event.sessionId,
-      })
-    } catch (err) {
-      console.error('Screencast frame error:', err)
+  const captureLoop = async () => {
+    const intervalMs = Math.max(20, Math.round(1000 / frameRate))
+    while (capturing) {
+      try {
+        const buffer = await page.screenshot({ type: 'jpeg', quality: 80 })
+        if (buffer && buffer.length > 0) {
+          stdin.write(buffer)
+          frameIndex += 1
+          if (frameIndex % 30 === 0) {
+            console.log('Capture: frame', frameIndex, 'size', buffer.length)
+          }
+        }
+      } catch (err) {
+        console.error('Screenshot capture error:', err)
+      }
+
+      await new Promise((r) => setTimeout(r, intervalMs))
     }
-  })
+  }
+
+  captureLoop()
 
   // Handle FFmpeg events
   ffmpeg.on('error', (err) => {
@@ -110,7 +114,10 @@ export async function startCapturePipeline(
 
   return {
     stop: async () => {
-      await cdpSession.send('Page.stopScreencast')
+      // Stop the screenshot capture loop and terminate ffmpeg + browser
+      capturing = false
+      // allow the loop to unwind and flush the last frame
+      await new Promise((r) => setTimeout(r, 100))
       stdin.end()
       ffmpeg.kill('SIGTERM')
       await browser.close()

@@ -1,34 +1,34 @@
-# MediaMTX Configuration
-# https://github.com/bluenviron/mediamtx
-
-# RTSP port
-rtspPort: 8554
-
-# HTTP API port
-httpPort: 8888
-
-# WebRTC port
-webrtcPort: 8889
-
-# HLS output
-hlsOn: yes
-
-# Path defaults
-pathDefaults:
-  publishUser: ''
-  publishPass: ''
-  readUser: ''
-  readPass: ''
-  record: no
-
-# Global settings
-liveQuota: '0'
-api: yes
-metrics: yes
-pprof: no
-debug: no
-
-# Logging
+rtspAddress: :8554
+rplAddress: :18000
+rtcpAddress: :18001
+webrtcAddress: :8889
+hlsAddress: :8888
+hlsAlwaysRemux: true
+hlsVariant: fmp4
+hlsSegmentCount: 3
+hlsSegmentDuration: 1s
+hlsPartDuration: 200ms
+hlsSegmentMaxSize: 50M
+hlsAllowOrigins:
+  - '*'
+authMethod: none
+rtspTransports:
+  - tcp
+readTimeout: 30s
+writeTimeout: 30s
+writeQueueSize: 32768
+udpMaxPayloadSize: 1472
 logLevel: info
-logDestinations:
-  - stdout
+api: true
+apiAddress: :9997
+paths:
+  weather-dash_main:
+    source: publisher
+    rtspTransport: tcp
+    record: false
+    overridePublisher: true
+  weather-dash_sub:
+    source: publisher
+    rtspTransport: tcp
+    record: false
+    overridePublisher: true
