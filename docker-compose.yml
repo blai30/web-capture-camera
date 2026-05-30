@@ -1,4 +1,14 @@
 services:
+  mediamtx:
+    image: bluenviron/mediamtx:latest
+    container_name: mediamtx
+    ports:
+      - '8554:8554'   # RTSP
+      - '8888:8888'   # HLS
+      - '8889:8889'   # WebRTC
+      - '9997:9997'   # API
+    restart: unless-stopped
+
   weather-dash:
     build:
       context: .
@@ -14,8 +24,9 @@ services:
     environment:
       - SERVER_PORT=5173
       - FRAME_RATE=${FRAME_RATE:-5}
-      # Point at host MediaMTX (Tony runs separately in its repo)
-      - MEDIAMTX_RTSP_URL=rtsp://127.0.0.1:8554/weather-dash_main
+      - MEDIAMTX_RTSP_URL=rtsp://mediamtx:8554/live
+    depends_on:
+      - mediamtx
     # Give extra memory for Playwright + FFmpeg
     deploy:
       resources:
