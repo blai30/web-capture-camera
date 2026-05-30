@@ -5,42 +5,13 @@ import { chromium } from 'playwright'
 interface CaptureConfig {
   spaUrl: string
   frameRate: number
-  onFrame: (h264Nalu: Buffer) => void
+  mediamtxUrl: string
 }
 
-interface CapturePipeline {
-  stop: () => void
-}
-
-// H.264 NALU start code
-const START_CODE = Buffer.from([0x00, 0x00, 0x00, 0x01])
-
-// Parse raw H.264 byte stream into individual NALUs
-function parseNalus(data: Buffer): Buffer[] {
-  const nalus: Buffer[] = []
-  let start = 0
-
-  while (start < data.length) {
-    // Find next start code
-    const idx = data.indexOf(START_CODE, start)
-    if (idx === -1) break
-
-    start = idx + START_CODE.length
-
-    // Find the next start code (end of this NALU)
-    const nextIdx = data.indexOf(START_CODE, start)
-    const end = nextIdx === -1 ? data.length : nextIdx
-
-    if (end > start) {
-      nalus.push(data.subarray(start, end))
-    }
-  }
-
-  return nalus
-}
-
-export async function startCapturePipeline(config: CaptureConfig): Promise<CapturePipeline> {
-  const { spaUrl, frameRate, onFrame } = config
+export async function startCapturePipeline(
+  config: CaptureConfig
+): Promise<{ stop: () => Promise<void> }> {
+  const { spaUrl, frameRate, mediamtxUrl } = config
 
   // Launch headless Chromium
   const browser = await chromium.launch({
@@ -75,7 +46,7 @@ export async function startCapturePipeline(config: CaptureConfig): Promise<Captu
     everyNthFrame: 1,
   })
 
-  // FFmpeg process: JPEG pipe → raw H.264 pipe
+  // FFmpeg process: JPEG pipe → RTSP push to MediaMTX
   const ffmpeg = spawn(
     'ffmpeg',
     [
@@ -95,43 +66,22 @@ export async function startCapturePipeline(config: CaptureConfig): Promise<Captu
       'zerolatency',
       '-pix_fmt',
       'yuv420p',
-      '-f',
-      'h264',
       '-bf',
       '0',
       '-g',
       String(frameRate * 2), // IDR frame every 2 seconds
-      'pipe:1',
+      '-f',
+      'rtsp',
+      '-rtsp_transport',
+      'tcp',
+      mediamtxUrl,
     ],
     {
-      stdio: ['pipe', 'pipe', 'inherit'],
+      stdio: ['pipe', 'inherit', 'inherit'],
     }
   )
 
   const stdin = ffmpeg.stdin!
-  const stdout = ffmpeg.stdout!
-
-  // Buffer for partial H.264 data
-  let h264Buffer = Buffer.alloc(0)
-
-  stdout.on('data', (chunk: Buffer) => {
-    h264Buffer = Buffer.concat([h264Buffer, chunk])
-    const nalus = parseNalus(h264Buffer)
-
-    // Calculate how many bytes were consumed by complete NALUs
-    let consumedBytes = 0
-    for (const nalu of nalus) {
-      onFrame(Buffer.concat([START_CODE, nalu]))
-      consumedBytes += nalu.length + START_CODE.length
-    }
-
-    // Retain any trailing partial data that couldn't form a complete NALU
-    if (consumedBytes > 0 && consumedBytes < h264Buffer.length) {
-      h264Buffer = h264Buffer.subarray(consumedBytes)
-    } else if (consumedBytes >= h264Buffer.length) {
-      h264Buffer = Buffer.alloc(0)
-    }
-  })
 
   // Handle screencast frames
   cdpSession.on('Page.screencastFrame', async (event) => {

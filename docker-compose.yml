@@ -10,25 +10,27 @@ services:
     container_name: weather-dash
     ports:
       - '5173:5173' # SPA + HTTP
-      - '8000:8000' # ONVIF SOAP
-      - '554:554' # RTSP
-      - '3702:3702/udp' # WS-Discovery
     restart: unless-stopped
     environment:
       - SERVER_PORT=5173
-      - RTSP_PORT=554
-      - WS_DISCOVERY_PORT=3702
       - FRAME_RATE=${FRAME_RATE:-5}
-      - ONVIF_HOST=${ONVIF_HOST:-0.0.0.0}
-      # For Docker Desktop on Windows/Mac, host.docker.internal maps to the host machine.
-      # Set ONVIF_ADVERTISED_HOST to the IP/hostname reachable by your UniFi controller.
-      - ONVIF_ADVERTISED_HOST=${ONVIF_ADVERTISED_HOST:-host.docker.internal}
-      # ONVIF credentials (UniFi requires credentials)
-      - ONVIF_USER=${ONVIF_USER:-admin}
-      - ONVIF_PASS=${ONVIF_PASS:-admin}
-      - ONVIF_DEVICE_NAME=${ONVIF_DEVICE_NAME:-Weather Dashboard Camera}
+      - MEDIAMTX_RTSP_URL=rtsp://mediamtx:8554/live
     # Give extra memory for Playwright + FFmpeg
     deploy:
       resources:
         limits:
           memory: 2G
+    depends_on:
+      - mediamtx
+
+  mediamtx:
+    image: bluenviron/rtsp-simple-server:latest
+    container_name: mediamtx
+    ports:
+      - '8554:8554' # RTSP
+      - '8888:8888' # HTTP API
+      - '8889:8889/tcp' # WebRTC
+      - '8889:8889/udp' # WebRTC
+    restart: unless-stopped
+    volumes:
+      - ./mediamtx.yml:/mediamtx.yml:ro

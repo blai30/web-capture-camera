@@ -1,0 +1,34 @@
+# MediaMTX Configuration
+# https://github.com/bluenviron/mediamtx
+
+# RTSP port
+rtspPort: 8554
+
+# HTTP API port
+httpPort: 8888
+
+# WebRTC port
+webrtcPort: 8889
+
+# HLS output
+hlsOn: yes
+
+# Path defaults
+pathDefaults:
+  publishUser: ''
+  publishPass: ''
+  readUser: ''
+  readPass: ''
+  record: no
+
+# Global settings
+liveQuota: '0'
+api: yes
+metrics: yes
+pprof: no
+debug: no
+
+# Logging
+logLevel: info
+logDestinations:
+  - stdout

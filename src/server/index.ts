@@ -4,23 +4,12 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 import { startCapturePipeline } from './capture'
-import { startOnvifServer } from './onvif'
-import { startRtspServer } from './rtsp'
-import { startWsDiscovery } from './wsdiscovery'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 const PORT = Number(process.env.SERVER_PORT ?? 5173)
-const RTSP_PORT = Number(process.env.RTSP_PORT ?? 554)
-const WS_DISCOVERY_PORT = Number(process.env.WS_DISCOVERY_PORT ?? 3702)
 const FRAME_RATE = Number(process.env.FRAME_RATE ?? 5)
-// Bind address (where the server listens) vs advertised address (what we tell ONVIF clients)
-const ONVIF_BIND_HOST = process.env.ONVIF_BIND_HOST ?? '0.0.0.0'
-const rawHost = process.env.ONVIF_ADVERTISED_HOST ?? process.env.ONVIF_HOST
-const ONVIF_ADVERTISED_HOST = rawHost && rawHost !== '0.0.0.0' ? rawHost : '127.0.0.1'
-// Ensure other modules that read process.env.ONVIF_HOST see the advertised host
-process.env.ONVIF_HOST = ONVIF_ADVERTISED_HOST
-const ONVIF_DEVICE_NAME = process.env.ONVIF_DEVICE_NAME ?? 'Weather Dashboard Camera'
+const MEDIAMTX_URL = process.env.MEDIAMTX_RTSP_URL ?? 'rtsp://localhost:8554/live'
 
 // Serve the built SPA
 const distDir = join(__dirname, '..', '..', 'dist')
@@ -56,52 +45,28 @@ function serveSpa(req: IncomingMessage, res: ServerResponse) {
 }
 
 async function main() {
-  // Start ONVIF SOAP server
-  const onvifServer = startOnvifServer({
-    host: ONVIF_ADVERTISED_HOST,
-    rtspPort: RTSP_PORT,
-    deviceName: ONVIF_DEVICE_NAME,
-    username: process.env.ONVIF_USER,
-    password: process.env.ONVIF_PASS,
-  })
-
-  // Start WS-Discovery responder
-  startWsDiscovery({
-    host: ONVIF_ADVERTISED_HOST,
-    wsDiscoveryPort: WS_DISCOVERY_PORT,
-  })
-
-  // Start RTSP server
-  const rtspServer = startRtspServer(RTSP_PORT)
-
   // Start HTTP server for SPA (must start before capture pipeline)
   const httpServer = createServer(serveSpa)
   await new Promise<void>((resolve) => {
     httpServer.listen(PORT, () => {
       console.log(`Weather Dashboard server running:`)
       console.log(`SPA: http://localhost:${PORT}`)
-      console.log(`ONVIF: http://${ONVIF_ADVERTISED_HOST}:8000/onvif`)
-      console.log(`RTSP: rtsp://${ONVIF_ADVERTISED_HOST}:${RTSP_PORT}/stream`)
-      console.log(`WS-Discovery: udp://${ONVIF_ADVERTISED_HOST}:${WS_DISCOVERY_PORT}`)
+      console.log(`MediaMTX RTSP: ${MEDIAMTX_URL}`)
       resolve()
     })
   })
 
-  // Start Playwright capture pipeline → FFmpeg → H.264 frames fed to RTSP
+  // Start Playwright capture pipeline → FFmpeg → RTSP push to MediaMTX
   const capture = await startCapturePipeline({
     spaUrl: `http://localhost:${PORT}`,
     frameRate: FRAME_RATE,
-    onFrame: (h264Nalu: Buffer) => {
-      rtspServer.pushFrame(h264Nalu)
-    },
+    mediamtxUrl: MEDIAMTX_URL,
   })
 
   // Graceful shutdown
   const shutdown = () => {
     console.log('\nShutting down...')
     capture.stop()
-    rtspServer.close()
-    onvifServer.close()
     httpServer.close()
     process.exit(0)
   }
