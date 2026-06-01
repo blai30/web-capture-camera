@@ -17,8 +17,7 @@ async function main() {
   await page.setViewport({ width: 1920, height: 1080 })
 
   const appUrl = 'http://vite-app:5173'
-  // const rtspUrl = 'rtsp://mediamtx:8554/weather'
-  const rtspUrl = 'rtsp://localhost:8554/weather'
+  const rtspUrl = 'rtsp://mediamtx:8554/weather'
 
   // Wait for Vite dev server to be ready
   let retries = 0

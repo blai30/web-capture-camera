@@ -19,8 +19,7 @@ onvif:
     #   bitrate: 512
     #   quality: 1
     target:
-      # hostname: mediamtx
-      hostname: localhost
+      hostname: mediamtx
       ports:
         rtsp: 8554
     uuid: a88b38fc-600a-4d5d-bcad-118f7ae79098
