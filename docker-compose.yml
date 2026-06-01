@@ -10,14 +10,18 @@ services:
       - '5173:5173'
     command: sh -c "npm install && npm run dev -- --host"
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:5173/ || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
 
   # 2. RTSP Server Broker
   mediamtx:
     image: bluenviron/mediamtx:latest
     container_name: mediamtx
     restart: unless-stopped
-    depends_on:
-      - vite-app
 
   # 3. Canvas Capture and Encoder
   server:
@@ -25,15 +29,15 @@ services:
     container_name: dashboard-server
     restart: unless-stopped
     depends_on:
-      - vite-app
-      - mediamtx
+      vite-app:
+        condition: service_healthy
 
   # 4. ONVIF Protocol Emulation Layer
   onvif:
+    # Run build-docker.sh to build a local docker image for arm64
+    image: rtsp-to-onvif:arm64
     # Original: https://github.com/p10tyr/rtsp-to-onvif
     # image: kulasolutions/rtsp-to-onvif:latest
-    # Build a docker image from build-docker.sh for arm64
-    image: rtsp-to-onvif:arm64
     hostname: onvif
     container_name: onvif
     restart: unless-stopped
