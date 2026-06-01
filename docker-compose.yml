@@ -10,12 +10,6 @@ services:
       - '5173:5173'
     command: sh -c "npm install && npm run dev -- --host"
     restart: unless-stopped
-    healthcheck:
-      test: ['CMD-SHELL', 'curl -fsS http://localhost:5173/ || exit 1']
-      interval: 5s
-      timeout: 3s
-      retries: 12
-      start_period: 5s
 
   # 2. RTSP Server Broker
   mediamtx:
@@ -29,8 +23,7 @@ services:
     container_name: dashboard-server
     restart: unless-stopped
     depends_on:
-      vite-app:
-        condition: service_healthy
+      - vite-app
 
   # 4. ONVIF Protocol Emulation Layer
   onvif:

@@ -6,7 +6,6 @@ ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
 # Install system dependencies for rendering and video streaming
 RUN apt-get update && apt-get install -y \
-    curl \
     chromium \
     xvfb \
     ffmpeg \
@@ -18,4 +17,4 @@ COPY package.json tsconfig.server.json index.ts ./
 RUN npm install
 
 # Initialize virtual canvas and execute using tsx
-CMD ["sh", "-c", "until curl -fsS http://vite-app:5173/; do sleep 1; done; Xvfb :99 -screen 0 1920x1080x24 & DISPLAY=:99 npx tsx index.ts"]
+CMD ["sh", "-c", "Xvfb :99 -screen 0 1920x1080x24 & DISPLAY=:99 npx tsx index.ts"]
