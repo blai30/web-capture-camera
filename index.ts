@@ -16,8 +16,8 @@ async function main() {
   const page = await browser.newPage()
   await page.setViewport({ width: 1920, height: 1080 })
 
-  const appUrl = 'http://vite-app:5173'
-  const rtspUrl = 'rtsp://mediamtx:8554/weather'
+  const appUrl = 'http://weather-dash-vite-app:5173'
+  const rtspUrl = 'rtsp://weather-dash-mediamtx:8554/weather'
 
   // Point to the internal Docker service name of your Vite app container
   await page.goto(appUrl, { waitUntil: 'networkidle2' })

@@ -1,8 +1,8 @@
 services:
   # 1. Your Local Weather App
-  vite-app:
+  weather-dash-vite-app:
     image: node:24-bookworm
-    container_name: vite-app
+    container_name: weather-dash-vite-app
     working_dir: /app
     volumes:
       - .:/app
@@ -12,27 +12,24 @@ services:
     restart: unless-stopped
 
   # 2. RTSP Server Broker
-  mediamtx:
+  weather-dash-mediamtx:
     image: bluenviron/mediamtx:latest
     container_name: mediamtx
     restart: unless-stopped
 
   # 3. Canvas Capture and Encoder
-  server:
+  weather-dash-server:
     build: .
-    container_name: dashboard-server
     restart: unless-stopped
     depends_on:
-      - vite-app
+      - weather-dash-vite-app
 
   # 4. ONVIF Protocol Emulation Layer
-  onvif:
+  weather-dash-onvif:
     # Run build-docker.sh to build a local docker image for arm64
     image: rtsp-to-onvif:arm64
     # Original: https://github.com/p10tyr/rtsp-to-onvif
     # image: kulasolutions/rtsp-to-onvif:latest
-    hostname: onvif
-    container_name: onvif
     restart: unless-stopped
     network_mode: host
     cap_add:
@@ -40,4 +37,4 @@ services:
     volumes:
       - ./onvif.yaml:/onvif.yaml
     depends_on:
-      - mediamtx
+      - weather-dash-mediamtx
