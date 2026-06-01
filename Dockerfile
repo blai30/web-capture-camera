@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-COPY package.json pnpm-lock.yaml tsconfig.server.json index.ts ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.server.json index.ts ./
 RUN npm install -g pnpm && pnpm install
 
 # Initialize virtual canvas and execute using tsx
