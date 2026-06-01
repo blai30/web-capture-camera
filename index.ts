@@ -60,7 +60,7 @@ async function main() {
   ]
 
   const ffmpeg = spawn('ffmpeg', ffmpegArgs)
-  // ffmpeg.stderr.on('data', (data) => console.log(`[FFmpeg] ${data.toString()}`))
+  ffmpeg.stderr.on('data', (data) => console.log(`[FFmpeg] ${data.toString()}`))
 }
 
 main().catch(console.error)
