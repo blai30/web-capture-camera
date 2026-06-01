@@ -19,7 +19,19 @@ async function main() {
   const appUrl = 'http://weather-dash-vite-app:5173'
   const rtspUrl = 'rtsp://weather-dash-mediamtx:8554/weather'
 
-  // Point to the internal Docker service name of your Vite app container
+  // Wait for Vite dev server to be ready
+  let retries = 0
+  while (retries < 30) {
+    try {
+      await fetch(appUrl)
+      break
+    } catch {
+      retries++
+      console.log(`Waiting for Vite server... attempt ${retries}/30`)
+      await new Promise((retry) => setTimeout(retry, 2000))
+    }
+  }
+
   await page.goto(appUrl, { waitUntil: 'networkidle2' })
 
   console.log('Vite app loaded in headless buffer. Starting FFmpeg encoding...')
