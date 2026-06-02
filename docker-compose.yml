@@ -14,7 +14,8 @@ services:
   mediamtx:
     image: bluenviron/mediamtx:latest
     ports:
-      - '8554:8554'   # RTSP (for onvif container to reach via host)
+      # RTSP (for onvif container to reach via host)
+      - '8554:8554'
     restart: unless-stopped
 
   # 3. Canvas Capture and Encoder
