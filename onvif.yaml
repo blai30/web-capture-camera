@@ -3,7 +3,7 @@ onvif:
     dev: eth0
     ports:
       server: 8081
-      rtsp: 8555
+      rtsp: 8554
       snapshot: 8080
     highQuality:
       rtsp: /weather
