@@ -1,11 +1,12 @@
 import { spawn } from 'child_process'
-import { mkdirSync, writeFileSync } from 'fs'
+import { mkdirSync } from 'fs'
 
 import puppeteer from 'puppeteer'
 
 const APP_URL = 'http://vite-app:5173'
 const RTSP_URL = 'rtsp://mediamtx:8554/weather'
 const FRAME_DIR = '/tmp/frames'
+const FRAMERATE = 1
 const CAPTURE_INTERVAL_MS = 10_000
 
 async function main() {
@@ -13,7 +14,7 @@ async function main() {
 
   const browser = await puppeteer.launch({
     headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--headless'],
   })
 
   const page = await browser.newPage()
@@ -34,39 +35,52 @@ async function main() {
 
   await page.goto(APP_URL, { waitUntil: 'networkidle2' })
 
-  let frame = 1_000_000
-  const pad = (n: number) => String(n).padStart(6, '0')
-
-  // Take initial frame so FFmpeg has something to read immediately
-  const initialBuffer = await page.screenshot({ type: 'png' })
-  writeFileSync(`${FRAME_DIR}/${pad(frame)}.png`, initialBuffer)
-  frame++
-
+  // Spawn FFMPEG to read from stdin (image2pipe) and output to RTSP using libx264
   // oxfmt-ignore
   const ffmpeg = spawn('ffmpeg', [
-    '-re',
-    '-framerate', '1',
-    '-start_number', '1000000',
-    '-i', `${FRAME_DIR}/%06d.png`,
+    '-f', 'image2pipe',
+    '-vcodec', 'png',
+    '-r', FRAMERATE.toString(),
+    '-i', '-',
     '-c:v', 'libx264',
-    '-preset', 'veryslow',
-    '-g', '1',
     '-pix_fmt', 'yuv420p',
+    '-preset', 'ultrafast',
+    '-tune', 'stillimage',
     '-f', 'rtsp',
-    RTSP_URL,
-  ])
-  ffmpeg.stderr.on('data', (data) => console.log(`[FFmpeg] ${data.toString()}`))
+    '-rtsp_transport', 'tcp',
+    RTSP_URL
+  ]);
 
-  console.log(`FFmpeg started, polling for frames in ${FRAME_DIR}/`)
+  let stderrBuffer = ''
+  ffmpeg.stderr.on('data', (data) => {
+    const msg = data.toString()
+    stderrBuffer += msg
+    console.log(`[FFmpeg] ${msg.trim()}`)
+  })
+
+  ffmpeg.stderr.on('data', (data) => {
+    console.log(`[FFMPEG] ${data.toString()}`)
+  })
 
   // Capture a new frame at the configured interval
   setInterval(async () => {
-    await page.reload({ waitUntil: 'networkidle2' })
-    const buffer = await page.screenshot({ type: 'png' })
-    writeFileSync(`${FRAME_DIR}/${pad(frame)}.png`, buffer)
-    console.log(`Frame ${frame} saved`)
-    frame++
-  }, CAPTURE_INTERVAL_MS).unref()
+    try {
+      const startTime = Date.now()
+
+      // Capture screenshot as a raw buffer
+      const screenshotBuffer = await page.screenshot({ type: 'png' })
+
+      // Write buffer to FFMPEG stdin
+      ffmpeg.stdin.write(screenshotBuffer)
+
+      // Dynamically calculate sleep time to maintain target FPS
+      const elapsed = Date.now() - startTime
+      const sleepTime = Math.max(0, 1000 / FRAMERATE - elapsed)
+      await new Promise((resolve) => setTimeout(resolve, sleepTime))
+    } catch (err) {
+      console.error('Error during frame capture:', err)
+    }
+  }, CAPTURE_INTERVAL_MS)
 }
 
 main().catch(console.error)
