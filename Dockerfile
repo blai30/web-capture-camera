@@ -17,4 +17,4 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.server.json index.
 RUN npm install -g pnpm && pnpm install
 
 # Initialize virtual canvas and execute using tsx
-CMD ["sh", "-c", "Xvfb :99 -screen 0 1920x1080x24 & DISPLAY=:99 npx tsx index.ts"]
+CMD ["sh", "-c", "Xvfb :99 -screen 0 1280x720x24 & DISPLAY=:99 npx tsx index.ts"]

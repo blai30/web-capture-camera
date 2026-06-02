@@ -8,13 +8,13 @@ async function main() {
     args: [
       '--no-sandbox',
       '--disable-setuid-sandbox',
-      '--window-size=1920,1080',
+      '--window-size=1280,720',
       '--autoplay-policy=no-user-gesture-required',
     ],
   })
 
   const page = await browser.newPage()
-  await page.setViewport({ width: 1920, height: 1080 })
+  await page.setViewport({ width: 1280, height: 720 })
 
   const appUrl = 'http://vite-app:5173'
   const rtspUrl = 'rtsp://mediamtx:8554/weather'
@@ -41,9 +41,9 @@ async function main() {
     '-f',
     'x11grab',
     '-video_size',
-    '1920x1080',
+    '1280x720',
     '-framerate',
-    '10', // Low FPS to prevent high Raspberry Pi CPU utilization
+    '10',
     '-i',
     ':99.0',
     '-c:v',

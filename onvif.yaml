@@ -4,12 +4,13 @@ onvif:
     ports:
       server: 8081
       rtsp: 8555
+      snapshot: 8080
     highQuality:
       rtsp: /weather
-      width: 1920
-      height: 1080
+      width: 1280
+      height: 720
       framerate: 10
-      bitrate: 1024
+      bitrate: 2048
       quality: 4
     # lowQuality:
     #   rtsp: /weather
@@ -19,7 +20,7 @@ onvif:
     #   bitrate: 512
     #   quality: 1
     target:
-      hostname: mediamtx
+      hostname: localhost
       ports:
         rtsp: 8554
     uuid: a88b38fc-600a-4d5d-bcad-118f7ae79098
