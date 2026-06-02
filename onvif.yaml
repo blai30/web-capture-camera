@@ -9,14 +9,14 @@ onvif:
       rtsp: /weather
       width: 1280
       height: 720
-      framerate: 15
+      framerate: 10
       bitrate: 2048
       quality: 4
     # lowQuality:
     #   rtsp: /weather
     #   width: 1280
     #   height: 720
-    #   framerate: 15
+    #   framerate: 10
     #   bitrate: 512
     #   quality: 1
     target:

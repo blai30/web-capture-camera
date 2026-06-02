@@ -46,13 +46,6 @@ async function main() {
     RTSP_URL
   ]);
 
-  let stderrBuffer = ''
-  ffmpeg.stderr.on('data', (data) => {
-    const msg = data.toString()
-    stderrBuffer += msg
-    console.log(`[FFmpeg] ${msg.trim()}`)
-  })
-
   ffmpeg.stderr.on('data', (data) => {
     console.log(`[FFMPEG] ${data.toString()}`)
   })
