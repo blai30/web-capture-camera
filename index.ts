@@ -43,7 +43,7 @@ async function main() {
     '-video_size',
     '1920x1080',
     '-framerate',
-    '5', // Low FPS to prevent high Raspberry Pi CPU utilization
+    '10', // Low FPS to prevent high Raspberry Pi CPU utilization
     '-i',
     ':99.0',
     '-c:v',
