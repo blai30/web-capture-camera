@@ -1,17 +1,12 @@
 import { spawn } from 'child_process'
-import { mkdirSync } from 'fs'
 
 import puppeteer from 'puppeteer'
 
 const APP_URL = 'http://vite-app:5173'
 const RTSP_URL = 'rtsp://mediamtx:8554/weather'
-const FRAME_DIR = '/tmp/frames'
 const FRAMERATE = 1
-const CAPTURE_INTERVAL_MS = 10_000
 
 async function main() {
-  mkdirSync(FRAME_DIR, { recursive: true })
-
   const browser = await puppeteer.launch({
     headless: true,
     args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--headless'],
@@ -62,25 +57,25 @@ async function main() {
     console.log(`[FFMPEG] ${data.toString()}`)
   })
 
-  // Capture a new frame at the configured interval
-  setInterval(async () => {
+  while (true) {
     try {
       const startTime = Date.now()
 
-      // Capture screenshot as a raw buffer
+      // Capture screenshot as a raw buffer and write to FFMPEG stdin
       const screenshotBuffer = await page.screenshot({ type: 'png' })
-
-      // Write buffer to FFMPEG stdin
       ffmpeg.stdin.write(screenshotBuffer)
 
-      // Dynamically calculate sleep time to maintain target FPS
+      // Dynamically calculate sleep time to maintain target framerate
       const elapsed = Date.now() - startTime
       const sleepTime = Math.max(0, 1000 / FRAMERATE - elapsed)
       await new Promise((resolve) => setTimeout(resolve, sleepTime))
     } catch (err) {
       console.error('Error during frame capture:', err)
+      break
     }
-  }, CAPTURE_INTERVAL_MS)
+  }
+
+  await browser.close()
 }
 
 main().catch(console.error)
