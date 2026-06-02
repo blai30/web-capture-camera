@@ -34,6 +34,7 @@ async function main() {
   // Spawn FFMPEG to read from stdin (image2pipe) and output to RTSP using libx264
   // oxfmt-ignore
   const ffmpeg = spawn('ffmpeg', [
+    're',
     '-f', 'image2pipe',
     '-vcodec', 'mjpeg',
     '-r', FRAMERATE.toString(),
