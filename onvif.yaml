@@ -7,18 +7,18 @@ onvif:
       snapshot: 8080
     highQuality:
       rtsp: /weather
-      width: 1920
-      height: 1080
-      framerate: 15
-      bitrate: 2048
-      quality: 4
-    lowQuality:
-      rtsp: /weather
       width: 1280
       height: 720
-      framerate: 15
-      bitrate: 512
-      quality: 1
+      framerate: 10
+      bitrate: 1024
+      quality: 4
+    # lowQuality:
+    #   rtsp: /weather
+    #   width: 1280
+    #   height: 720
+    #   framerate: 10
+    #   bitrate: 512
+    #   quality: 1
     target:
       hostname: localhost
       ports:

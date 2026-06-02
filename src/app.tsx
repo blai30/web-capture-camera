@@ -3,8 +3,8 @@ import { Dashboard } from '@/components/dashboard'
 export function App() {
   return (
     <div class="flex h-screen items-start">
-      {/* 1920x1080 */}
-      <main class="w-480 h-270">
+      {/* 1280x720 */}
+      <main class="w-7xl h-180">
         <Dashboard />
       </main>
     </div>

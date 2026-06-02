@@ -4,7 +4,7 @@ import puppeteer from 'puppeteer'
 
 const APP_URL = 'http://vite-app:5173'
 const RTSP_URL = 'rtsp://mediamtx:8554/weather'
-const FRAMERATE = 15
+const FRAMERATE = 10
 const INTERVAL = 60_000
 
 async function main() {
@@ -35,6 +35,7 @@ async function main() {
   // oxfmt-ignore
   const ffmpeg = spawn('ffmpeg', [
     '-f', 'image2pipe',
+    '-loop', '1',
     '-c:v', 'png',
     '-framerate', '1',
     '-i', 'pipe:0',
