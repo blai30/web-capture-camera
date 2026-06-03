@@ -1,0 +1,10 @@
+# Docker Compose configuration for development environment
+# Cannot test ONVIF integration in dev due to macvlan limitations on Windows
+
+services:
+  mediamtx:
+    image: bluenviron/mediamtx:latest
+    ports:
+      - '554:554'
+    volumes:
+      - ./mediamtx.yml:/mediamtx.yml

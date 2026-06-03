@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "vite",
     "dev:server": "tsx watch index.ts",
+    "dev:docker:up": "docker compose -f docker-compose.dev.yml up --build",
     "build": "vite build",
     "preview": "vite preview",
     "lint": "oxlint",
