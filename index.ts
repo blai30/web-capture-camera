@@ -31,6 +31,7 @@ async function main() {
 
   const page = await browser.newPage()
   await page.setViewport({ width: 1280, height: 720 })
+  await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'dark' }])
 
   // Wait for Vite dev server to be ready
   let retries = 0

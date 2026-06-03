@@ -61,7 +61,7 @@ export function Dashboard() {
 
   return (
     <div class="flex h-full items-center justify-center p-8">
-      <div class="flex w-full max-w-full flex-col gap-8 rounded-3xl bg-white/5 p-10 shadow-2xl ring-1 ring-white/10 backdrop-blur-md">
+      <div class="flex w-full max-w-full flex-col gap-8 rounded-3xl p-10 ring-1 dark:bg-white/5 dark:ring-white/10">
         {/* Location + time */}
         <div class="flex items-center justify-between">
           <div class="text-4xl font-medium tracking-wide text-zinc-200">{data.locationName}</div>
