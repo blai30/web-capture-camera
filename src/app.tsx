@@ -4,7 +4,7 @@ export function App() {
   return (
     <div class="flex h-screen items-start">
       {/* 1280x720 */}
-      <main class="w-7xl h-180">
+      <main class="aspect-video max-h-180 w-full max-w-7xl">
         <Dashboard />
       </main>
     </div>

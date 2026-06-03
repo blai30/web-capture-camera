@@ -4,13 +4,27 @@ import puppeteer from 'puppeteer'
 
 const APP_URL = 'http://vite-app:5173'
 const RTSP_URL = 'rtsp://mediamtx:554/weather'
-const FRAMERATE = 1
-const INTERVAL = 60_000
+const FRAMERATE = 5
+const INTERVAL = 600_000
 
 async function main() {
   const browser = await puppeteer.launch({
     headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--headless'],
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      '--disable-dev-shm-usage',
+      '--disable-gpu',
+      '--disable-software-rasterizer',
+      '--disable-remote-fonts',
+      '--disable-background-networking',
+      '--disable-default-apps',
+      '--no-first-run',
+      '--disable-extensions',
+      '--disable-sync',
+      '--metrics-recording-only',
+      '--disable-renderer-backgrounding',
+    ],
   })
 
   const page = await browser.newPage()
@@ -41,15 +55,17 @@ async function main() {
     '-i', 'pipe:0',
     '-c:v', 'libx264',
     '-pix_fmt', 'yuv420p',
-    '-color_range', '1',
+    '-profile:v', 'main',
+    '-level', '3.1',
     '-preset', 'ultrafast',
     '-tune', 'stillimage',
+    '-b:v', '1000k',
     '-r', FRAMERATE.toString(),
-    '-g', (FRAMERATE * 2).toString(),
+    '-g', '10',
     '-f', 'rtsp',
     '-rtsp_transport', 'tcp',
     RTSP_URL
-  ]);
+  ])
 
   ffmpeg.stderr.on('data', (data) => {
     console.log(`[FFMPEG] ${data.toString()}`)

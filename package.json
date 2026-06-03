@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:server": "tsx watch index.ts",
     "build": "vite build",
     "preview": "vite preview",
     "lint": "oxlint",
