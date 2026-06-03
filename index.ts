@@ -18,14 +18,10 @@ async function main() {
       '--disable-dev-shm-usage',
       '--disable-gpu',
       '--disable-software-rasterizer',
-      '--disable-remote-fonts',
-      '--disable-background-networking',
       '--disable-default-apps',
       '--no-first-run',
       '--disable-extensions',
       '--disable-sync',
-      '--metrics-recording-only',
-      '--disable-renderer-backgrounding',
     ],
   })
 
