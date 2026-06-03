@@ -6,7 +6,7 @@ import puppeteer from 'puppeteer'
 const DEV_MODE = process.env.NODE_ENV === 'development'
 const APP_URL = DEV_MODE ? 'http://localhost:5173' : 'http://vite-app:5173'
 const RTSP_URL = DEV_MODE ? 'rtsp://localhost:554/weather' : 'rtsp://mediamtx:554/weather'
-const FRAMERATE = 5
+const FRAMERATE = 1
 const INTERVAL = 600_000
 
 async function main() {
@@ -50,20 +50,26 @@ async function main() {
   // Spawn FFMPEG to read from stdin (image2pipe) and output to RTSP using libx264
   // oxfmt-ignore
   const ffmpeg = spawn('ffmpeg', [
+    // Input: JPEG frames via stdin
     '-f', 'image2pipe',
     '-loop', '1',
     '-c:v', 'png',
     '-framerate', '1',
     '-i', 'pipe:0',
-    '-c:v', 'libx264',
+    // Video filter pixel format
     '-pix_fmt', 'yuv420p',
-    '-profile:v', 'main',
+    // Encoder
+    '-c:v', 'libx264',
+    '-profile:v', 'baseline',
     '-level', '3.1',
     '-preset', 'ultrafast',
     '-tune', 'stillimage',
+    // Bitrate
     '-b:v', '1000k',
+    // Output rate
     '-r', FRAMERATE.toString(),
     '-g', '10',
+    // Output: RTSP ANNOUNCE to our own server
     '-f', 'rtsp',
     '-rtsp_transport', 'tcp',
     RTSP_URL

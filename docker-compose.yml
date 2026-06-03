@@ -7,6 +7,8 @@ services:
       - .:/app
     ports:
       - '5173:5173'
+    environment:
+      - PUPPETEER_SKIP_DOWNLOAD=true
     command: sh -c "npm install -g pnpm && CI=true pnpm install && pnpm vite --host"
     restart: unless-stopped
 
