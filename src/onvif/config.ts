@@ -18,7 +18,7 @@ export const deviceConfig = {
   macAddress: process.env.DEVICE_MAC ?? '2C:CF:67:F7:F2:49',
 }
 
-export interface ProfileConfig {
+export type ProfileConfig = {
   name: string
   token: string
   width: number
