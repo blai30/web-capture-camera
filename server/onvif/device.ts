@@ -1,4 +1,4 @@
-import { onvifConfig, deviceConfig, rtspConfig } from './config'
+import { onvifConfig, deviceConfig, rtspConfig, profiles, type ProfileConfig } from './config'
 
 const DEVICE_SERVICE_NAMESPACE = 'http://www.onvif.org/ver10/device/wsdl'
 const MEDIA_SERVICE_NAMESPACE = 'http://www.onvif.org/ver10/media/wsdl'
@@ -128,6 +128,12 @@ export function createOnvifDevice() {
     }
   }
 
+  function getProfilesResponse() {
+    return {
+      Profiles: Object.values(profiles).map(buildOnvifProfile),
+    }
+  }
+
   function getVideoSources() {
     return {
       VideoSources: [
@@ -160,9 +166,42 @@ export function createOnvifDevice() {
     getCapabilities,
     getServicesResponse,
     getSystemDateAndTime,
+    getProfilesResponse,
     getVideoSources,
     streamUri,
     snapshotUri,
+  }
+}
+
+function buildOnvifProfile(profile: ProfileConfig) {
+  return {
+    token: profile.token,
+    name: profile.name,
+    VideoSourceConfiguration: {
+      token: `vs_${profile.token}`,
+      Name: `${profile.name}_VideoSource`,
+      UseCount: 0,
+      SourceToken: '',
+      Bounds: { X: 0, Y: 0, Width: profile.width, Height: profile.height },
+    },
+    VideoEncoderConfiguration: {
+      token: `ve_${profile.token}`,
+      Name: `${profile.name}_H264`,
+      UseCount: 0,
+      Encoding: 'H264',
+      Resolution: { Width: profile.width, Height: profile.height },
+      Quality: profile.quality,
+      RateControl: {
+        FrameRateLimit: profile.framerate,
+        BitrateLimit: profile.bitrate,
+        EncodingInterval: 1,
+      },
+      H264: {
+        GovLength: 50,
+        H264Profile: 'Main',
+        Level: 'H264Level4',
+      },
+    },
   }
 }
 
