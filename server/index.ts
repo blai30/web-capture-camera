@@ -1,11 +1,11 @@
 import 'dotenv/config'
-import { spawn } from 'child_process'
+import { spawn, ChildProcess } from 'child_process'
 
-import puppeteer from 'puppeteer'
+import puppeteer, { Browser } from 'puppeteer'
 
 import { rtspConfig } from './onvif/config'
-import { WsDiscovery } from './onvif/discovery'
-import { OnvifServer } from './onvif/server'
+import { createWsDiscovery } from './onvif/discovery'
+import { createOnvifServer } from './onvif/server'
 import { createRtspServer } from './rtsp/server'
 
 const APP_URL = 'http://localhost:5173'
@@ -15,16 +15,16 @@ const FRAMERATE = 1
 const INTERVAL = 600_000
 
 async function main() {
-  const rtsp = createRtspServer()
+  await using rtsp = createRtspServer()
   await rtsp.start()
 
-  const onvif = new OnvifServer()
+  await using onvif = createOnvifServer()
   await onvif.start()
 
-  const discovery = new WsDiscovery()
+  await using discovery = createWsDiscovery()
   discovery.start()
 
-  const browser = await puppeteer.launch({
+  const browser: Browser = await puppeteer.launch({
     headless: true,
     args: [
       '--no-sandbox',
@@ -60,7 +60,7 @@ async function main() {
 
   // Spawn FFMPEG to read from stdin (image2pipe) and output to RTSP using libx264
   // oxfmt-ignore
-  const ffmpeg = spawn('ffmpeg', [
+  const ffmpeg: ChildProcess = spawn('ffmpeg', [
     // Input: JPEG frames via stdin
     '-f', 'image2pipe',
     '-loop', '1',
@@ -83,10 +83,10 @@ async function main() {
     // Output: RTSP ANNOUNCE to our own server
     '-f', 'rtsp',
     '-rtsp_transport', 'tcp',
-    RTSP_URL
+    RTSP_URL,
   ])
 
-  ffmpeg.stderr.on('data', (data) => {
+  ffmpeg.stderr?.on('data', (data) => {
     console.log(`[FFMPEG] ${data.toString()}`)
   })
 
@@ -99,14 +99,23 @@ async function main() {
 
   // Capture new screenshot every 60 seconds
   await writeFrame()
-  setInterval(writeFrame, INTERVAL)
-
-  // Push to ffmpeg stdin at 1 fps to keep stream alive
-  setInterval(() => {
-    if (latestFrame && !ffmpeg.stdin.destroyed) {
-      ffmpeg.stdin.write(latestFrame, () => {})
+  const captureInterval = setInterval(writeFrame, INTERVAL)
+  const pushInterval = setInterval(() => {
+    if (latestFrame && !ffmpeg.stdin?.destroyed) {
+      ffmpeg.stdin?.write(latestFrame, () => {})
     }
   }, 1000)
+
+  const controller = new AbortController()
+  process.on('SIGINT', () => controller.abort())
+  process.on('SIGTERM', () => controller.abort())
+
+  await new Promise((resolve) => controller.signal.addEventListener('abort', resolve))
+
+  clearInterval(captureInterval)
+  clearInterval(pushInterval)
+  ffmpeg.kill()
+  await browser.close()
 }
 
 main().catch(console.error)

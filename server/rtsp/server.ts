@@ -3,6 +3,8 @@ import net from 'net'
 import { rtspConfig } from '../onvif/config'
 
 const CRLF = '\r\n'
+const INTERLEAVED_PREFIX = 0x24
+const MAX_BUFFER = 60
 
 type ClientSession = {
   socket: net.Socket
@@ -12,41 +14,32 @@ type ClientSession = {
   playing: boolean
 }
 
-class RtspServer {
-  private server: net.Server | null = null
-  private publisherSocket: net.Socket | null = null
-  private publisherSessionId = ''
-  private publisherSdp = ''
-  private publisherBuffer = Buffer.alloc(0)
-  private subscribers = new Map<string, ClientSession>()
-  private rtpRingBuffer: Buffer[] = []
-  private readonly maxBuffer = 60
+export function createRtspServer() {
+  const server = net.createServer((socket: net.Socket) => {
+    handleConnection(socket)
+  })
 
-  async start(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      this.server = net.createServer((socket: net.Socket) => {
-        this.handleConnection(socket)
-      })
+  let publisherSocket: net.Socket | null = null
+  let publisherSessionId = ''
+  let publisherSdp = ''
+  let publisherBuffer = Buffer.alloc(0)
+  const subscribers = new Map<string, ClientSession>()
+  const rtpRingBuffer: Buffer[] = []
 
-      this.server.on('error', reject)
-      this.server.listen(rtspConfig.port, '0.0.0.0', () => {
-        console.log(`[RTSP] Server listening on port ${rtspConfig.port}`)
-        resolve()
-      })
-    })
+  function cleanupPublisher(socket: net.Socket) {
+    if (publisherSocket === socket) {
+      publisherSocket = null
+      publisherBuffer = Buffer.alloc(0)
+    }
   }
 
-  async stop(): Promise<void> {
-    return new Promise((resolve) => {
-      if (!this.server) {
-        resolve()
-        return
-      }
-      this.server.close(() => resolve())
-    })
+  function cleanupSubscriber(id: string) {
+    if (id) {
+      subscribers.delete(id)
+    }
   }
 
-  private handleConnection(socket: net.Socket) {
+  function handleConnection(socket: net.Socket) {
     const remote = `${socket.remoteAddress}:${socket.remotePort}`
     console.log(`[RTSP] Connection from ${remote}`)
 
@@ -56,15 +49,13 @@ class RtspServer {
     let buffer = ''
     let isPublisher = false
     let sessionId = ''
-    let currentPath = ''
-    let rtpChannel = 0
 
-    const sendResponse = (
+    function sendResponse(
       cseq: string,
       status: string,
       extraHeaders: Record<string, string> = {},
       body?: string
-    ) => {
+    ) {
       const headers = [`CSeq: ${cseq}`, 'User-Agent: WeatherDash-RTSP']
       for (const [key, value] of Object.entries(extraHeaders)) {
         headers.push(`${key}: ${value}`)
@@ -77,7 +68,7 @@ class RtspServer {
       socket.write(response)
     }
 
-    const parseHeaders = (text: string): Record<string, string> => {
+    function parseHeaders(text: string): Record<string, string> {
       const headers: Record<string, string> = {}
       const lines = text.split('\r\n')
       for (const line of lines.slice(1)) {
@@ -90,11 +81,9 @@ class RtspServer {
       return headers
     }
 
-    const onPublisherData = (chunk: Buffer) => {
-      // Prepend any leftover bytes from the previous chunk
-      const data =
-        this.publisherBuffer.length > 0 ? Buffer.concat([this.publisherBuffer, chunk]) : chunk
-      this.publisherBuffer = Buffer.alloc(0)
+    function onPublisherData(chunk: Buffer) {
+      const data = publisherBuffer.length > 0 ? Buffer.concat([publisherBuffer, chunk]) : chunk
+      publisherBuffer = Buffer.alloc(0)
 
       let offset = 0
       while (offset < data.length) {
@@ -102,27 +91,24 @@ class RtspServer {
           offset++
           continue
         }
-        // Need 4-byte header
         if (offset + 4 > data.length) break
         const channel = data[offset + 1]
         const length = (data[offset + 2] << 8) | data[offset + 3]
         const end = offset + 4 + length
-        // Need full payload
         if (end > data.length) break
         const payload = data.subarray(offset + 4, end)
 
         if (channel % 2 === 0) {
-          this.rtpRingBuffer.push(Buffer.from(payload))
-          if (this.rtpRingBuffer.length > this.maxBuffer) {
-            this.rtpRingBuffer.shift()
+          rtpRingBuffer.push(Buffer.from(payload))
+          if (rtpRingBuffer.length > MAX_BUFFER) {
+            rtpRingBuffer.shift()
           }
-          for (const [id, sub] of this.subscribers.entries()) {
+          for (const [, sub] of subscribers.entries()) {
             if (sub.playing) {
               const ok = sub.socket.write(
                 Buffer.concat([interleavedHeader(sub.rtpChannel, payload.length), payload])
               )
               if (!ok) {
-                // Drain-aware: pause until the socket drains to avoid unbounded buffering
                 sub.socket.once('drain', () => {})
               }
             }
@@ -131,33 +117,31 @@ class RtspServer {
         offset = end
       }
 
-      // Save any incomplete trailing bytes for the next chunk
       if (offset < data.length) {
-        this.publisherBuffer = Buffer.from(data.subarray(offset))
+        publisherBuffer = Buffer.from(data.subarray(offset))
       }
     }
 
-    const routeOptions = (cseq: string) => {
+    function routeOptions(cseq: string) {
       sendResponse(cseq, '200 OK', {
         Public: 'DESCRIBE, ANNOUNCE, SETUP, PLAY, TEARDOWN, OPTIONS, GET_PARAMETER, SET_PARAMETER',
       })
     }
 
-    const routeAnnounce = (
+    function routeAnnounce(
       cseq: string,
       uri: string,
       _headers: Record<string, string>,
       body: string
-    ) => {
+    ) {
       isPublisher = true
-      currentPath = uri
-      this.publisherSocket = socket
-      this.publisherSdp = body
+      publisherSocket = socket
+      publisherSdp = body
 
-      for (const [id, sess] of this.subscribers.entries()) {
+      for (const [id, sess] of subscribers.entries()) {
         if (sess.socket === socket) {
-          this.subscribers.delete(id)
-          this.publisherSessionId = id
+          subscribers.delete(id)
+          publisherSessionId = id
           break
         }
       }
@@ -166,25 +150,25 @@ class RtspServer {
       sendResponse(cseq, '200 OK')
     }
 
-    const routeDescribe = (cseq: string) => {
-      if (this.publisherSdp) {
-        console.log(`[RTSP] Returning SDP (${this.publisherSdp.length} chars)`)
-        sendResponse(cseq, '200 OK', { 'Cache-Control': 'no-cache' }, this.publisherSdp)
+    function routeDescribe(cseq: string) {
+      if (publisherSdp) {
+        console.log(`[RTSP] Returning SDP (${publisherSdp.length} chars)`)
+        sendResponse(cseq, '200 OK', { 'Cache-Control': 'no-cache' }, publisherSdp)
       } else {
         console.log('[RTSP] DESCRIBE rejected: no publisher SDP yet')
         sendResponse(cseq, '404 Not Found')
       }
     }
 
-    const routeSetup = (cseq: string, uri: string, headers: Record<string, string>) => {
+    function routeSetup(cseq: string, uri: string, headers: Record<string, string>) {
       const transport = headers['transport'] ?? ''
       const match = transport.match(/interleaved=(\d+)-(\d+)/)
       sessionId = generateSessionId()
 
+      let rtpChannel = 0
       if (match) {
         rtpChannel = parseInt(match[1], 10)
-        currentPath = uri
-        this.subscribers.set(sessionId, {
+        subscribers.set(sessionId, {
           socket,
           sessionId,
           rtpChannel: parseInt(match[1], 10),
@@ -199,11 +183,12 @@ class RtspServer {
       })
     }
 
-    const routePlay = (cseq: string, uri: string) => {
-      const sess = this.subscribers.get(sessionId)
+    function routePlay(cseq: string, uri: string) {
+      const sess = subscribers.get(sessionId)
       if (sess) {
         sess.playing = true
-        for (const frame of this.rtpRingBuffer) {
+        const rtpChannel = sess.rtpChannel
+        for (const frame of rtpRingBuffer) {
           try {
             socket.write(Buffer.concat([interleavedHeader(rtpChannel, frame.length), frame]))
           } catch {
@@ -217,21 +202,21 @@ class RtspServer {
       })
     }
 
-    const routeRecord = (cseq: string, uri: string) => {
+    function routeRecord(cseq: string, uri: string) {
       console.log(`[RTSP] RECORD ${uri}`)
       sendResponse(cseq, '200 OK', { Session: sessionId })
       socket.removeListener('data', onData)
       socket.on('data', onPublisherData)
     }
 
-    const routeTeardown = (cseq: string, _uri: string, headers: Record<string, string>) => {
+    function routeTeardown(cseq: string, _uri: string, headers: Record<string, string>) {
       const sess = headers['session']?.split(';')[0] ?? ''
-      this.subscribers.delete(sess)
+      subscribers.delete(sess)
       sendResponse(cseq, '200 OK')
       socket.end()
     }
 
-    const routeGetParameter = (cseq: string) => {
+    function routeGetParameter(cseq: string) {
       sendResponse(cseq, '200 OK', { Session: sessionId })
     }
 
@@ -250,12 +235,7 @@ class RtspServer {
       SET_PARAMETER: routeGetParameter,
     }
 
-    const onRequest = (
-      method: string,
-      uri: string,
-      headers: Record<string, string>,
-      body: string
-    ) => {
+    function onRequest(method: string, uri: string, headers: Record<string, string>, body: string) {
       const cseq = headers['cseq'] ?? '0'
       console.log(`[RTSP] ${method} ${uri} (CSeq: ${cseq}) from ${remote}`)
 
@@ -267,7 +247,7 @@ class RtspServer {
       }
     }
 
-    const onData = (raw: Buffer) => {
+    function onData(raw: Buffer) {
       const text = raw.toString('ascii')
       buffer += text
 
@@ -306,32 +286,34 @@ class RtspServer {
     socket.on('data', onData)
 
     socket.on('error', () => {
-      this.cleanupPublisher(socket)
-      this.cleanupSubscriber(sessionId)
+      cleanupPublisher(socket)
+      cleanupSubscriber(sessionId)
     })
 
     socket.on('close', () => {
       console.log(`[RTSP] Connection closed: ${remote}${isPublisher ? ' (publisher)' : ''}`)
-      this.cleanupPublisher(socket)
-      this.cleanupSubscriber(sessionId)
+      cleanupPublisher(socket)
+      cleanupSubscriber(sessionId)
     })
   }
 
-  private cleanupPublisher(socket: net.Socket) {
-    if (this.publisherSocket === socket) {
-      this.publisherSocket = null
-      this.publisherBuffer = Buffer.alloc(0)
-    }
+  function start(): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+      server.on('error', reject)
+      server.listen(rtspConfig.port, '0.0.0.0', () => {
+        console.log(`[RTSP] Server listening on port ${rtspConfig.port}`)
+        resolve()
+      })
+    })
   }
 
-  private cleanupSubscriber(id: string) {
-    if (id) {
-      this.subscribers.delete(id)
-    }
-  }
+  const asyncDispose = () =>
+    new Promise<void>((resolve) => {
+      server.close(() => resolve())
+    })
+
+  return { start, [Symbol.asyncDispose]: asyncDispose }
 }
-
-const INTERLEAVED_PREFIX = 0x24
 
 function interleavedHeader(channel: number, length: number): Buffer {
   const buf = Buffer.alloc(4)
@@ -343,15 +325,4 @@ function interleavedHeader(channel: number, length: number): Buffer {
 
 function generateSessionId(): string {
   return Math.random().toString(16).slice(2, 10)
-}
-
-let server: RtspServer | null = null
-
-export function createRtspServer(): RtspServer {
-  server = new RtspServer()
-  return server
-}
-
-export function getRtspServer(): RtspServer | null {
-  return server
 }

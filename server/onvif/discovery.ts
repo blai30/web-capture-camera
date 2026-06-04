@@ -5,63 +5,18 @@ import { onvifConfig, deviceConfig } from './config'
 const MULTICAST_GROUP = '239.255.255.250'
 const DISCOVERY_PORT = 3702
 
-export class WsDiscovery {
-  private socket: dgram.Socket | null = null
-  private hostname: string
-  private port: number
-  private uuid: string
+export function createWsDiscovery(options?: { hostname?: string; port?: number }) {
+  const socket = dgram.createSocket({
+    type: 'udp4',
+    reuseAddr: true,
+  })
+  const hostname = options?.hostname ?? onvifConfig.hostname
+  const port = options?.port ?? onvifConfig.port
+  const uuid = onvifConfig.uuid
 
-  constructor(options?: { hostname?: string; port?: number }) {
-    this.hostname = options?.hostname ?? onvifConfig.hostname
-    this.port = options?.port ?? onvifConfig.port
-    this.uuid = onvifConfig.uuid
-  }
-
-  start(): void {
-    this.socket = dgram.createSocket({
-      type: 'udp4',
-      reuseAddr: true,
-    })
-    this.socket.bind(
-      {
-        port: DISCOVERY_PORT,
-        exclusive: false,
-      },
-      () => {
-        try {
-          this.socket?.addMembership(MULTICAST_GROUP)
-        } catch {
-          /* ignore membership errors */
-        }
-        console.log(`[WS-Discovery] Listening on port ${DISCOVERY_PORT}`)
-      }
-    )
-
-    this.socket.on('message', (_message: Buffer, _info: { address: string; port: number }) => {
-      const text = _message.toString()
-      if (text.includes('Probe') && text.includes('NetworkVideoTransmitter')) {
-        const probeMessageId = extractMessageId(text)
-        if (probeMessageId) {
-          this.sendProbeMatch(probeMessageId)
-        }
-      }
-    })
-
-    this.socket.on('error', (error: Error) => {
-      console.error('[WS-Discovery] Error:', error.message)
-    })
-  }
-
-  stop(): void {
-    if (this.socket) {
-      this.socket.close()
-      this.socket = null
-    }
-  }
-
-  private sendProbeMatch(relatesTo: string): void {
+  function sendProbeMatch(relatesTo: string) {
     const messageId = 'uuid:' + generateUuid()
-    const xaddr = `http://${this.hostname}:${this.port}/onvif/device_service`
+    const xaddr = `http://${hostname}:${port}/onvif/device_service`
 
     const response =
       `<?xml version="1.0" encoding="UTF-8"?>` +
@@ -80,7 +35,7 @@ export class WsDiscovery {
       `<d:ProbeMatches>` +
       `<d:ProbeMatch>` +
       `<wsa:EndpointReference>` +
-      `<wsa:Address>urn:uuid:${this.uuid}</wsa:Address>` +
+      `<wsa:Address>urn:uuid:${uuid}</wsa:Address>` +
       `</wsa:EndpointReference>` +
       `<d:Types>dn:NetworkVideoTransmitter</d:Types>` +
       `<d:Scopes>` +
@@ -97,11 +52,48 @@ export class WsDiscovery {
       `</e:Envelope>`
 
     try {
-      this.socket?.send(response, DISCOVERY_PORT, MULTICAST_GROUP)
+      socket.send(response, DISCOVERY_PORT, MULTICAST_GROUP)
     } catch {
       /* silent on send failure */
     }
   }
+
+  function start() {
+    socket.bind(
+      {
+        port: DISCOVERY_PORT,
+        exclusive: false,
+      },
+      () => {
+        try {
+          socket.addMembership(MULTICAST_GROUP)
+        } catch {
+          /* ignore membership errors */
+        }
+        console.log(`[WS-Discovery] Listening on port ${DISCOVERY_PORT}`)
+      }
+    )
+
+    socket.on('message', (_message: Buffer, _info: { address: string; port: number }) => {
+      const text = _message.toString()
+      if (text.includes('Probe') && text.includes('NetworkVideoTransmitter')) {
+        const probeMessageId = extractMessageId(text)
+        if (probeMessageId) {
+          sendProbeMatch(probeMessageId)
+        }
+      }
+    })
+
+    socket.on('error', (error: Error) => {
+      console.error('[WS-Discovery] Error:', error.message)
+    })
+  }
+
+  const asyncDispose = async () => {
+    socket.close()
+  }
+
+  return { start, [Symbol.asyncDispose]: asyncDispose }
 }
 
 function extractMessageId(xml: string): string | null {
