@@ -54,10 +54,11 @@ export function Dashboard() {
   if (!data) return null
 
   const Icon = getWeatherIcon(data.current.weatherCode)
-  const updatedAt = data.updatedAt.toLocaleTimeString(undefined, {
+  const updatedAt = new Intl.DateTimeFormat(undefined, {
     hour: 'numeric',
     minute: '2-digit',
-  })
+    timeZone: import.meta.env.VITE_TIMEZONE || undefined,
+  }).format(data.updatedAt)
 
   return (
     <div class="flex h-full items-center justify-center p-8">
