@@ -13,15 +13,21 @@ import type { WeatherCode } from '@/lib/weather-types'
 
 type IconComponent = typeof Sun
 
+const WEATHER_ICON_THRESHOLDS = [
+  [1, Sun],
+  [3, Cloudy],
+  [48, CloudFog],
+  [57, CloudDrizzle],
+  [67, CloudRain],
+  [77, CloudSnow],
+  [82, CloudRain],
+  [86, CloudSnow],
+  [99, CloudLightning],
+] as const satisfies ReadonlyArray<[number, IconComponent]>
+
 export function getWeatherIcon(weatherCode: WeatherCode): IconComponent {
-  if (weatherCode <= 1) return Sun
-  if (weatherCode <= 3) return Cloudy
-  if (weatherCode <= 48) return CloudFog
-  if (weatherCode <= 57) return CloudDrizzle
-  if (weatherCode <= 67) return CloudRain
-  if (weatherCode <= 77) return CloudSnow
-  if (weatherCode <= 82) return CloudRain
-  if (weatherCode <= 86) return CloudSnow
-  if (weatherCode <= 99) return CloudLightning
+  for (const [threshold, icon] of WEATHER_ICON_THRESHOLDS) {
+    if (weatherCode <= threshold) return icon
+  }
   return Cloud
 }
