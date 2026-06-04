@@ -137,6 +137,119 @@ class RtspServer {
       }
     }
 
+    const routeOptions = (cseq: string) => {
+      sendResponse(cseq, '200 OK', {
+        Public: 'DESCRIBE, ANNOUNCE, SETUP, PLAY, TEARDOWN, OPTIONS, GET_PARAMETER, SET_PARAMETER',
+      })
+    }
+
+    const routeAnnounce = (
+      cseq: string,
+      uri: string,
+      _headers: Record<string, string>,
+      body: string
+    ) => {
+      isPublisher = true
+      currentPath = uri
+      this.publisherSocket = socket
+      this.publisherSdp = body
+
+      for (const [id, sess] of this.subscribers.entries()) {
+        if (sess.socket === socket) {
+          this.subscribers.delete(id)
+          this.publisherSessionId = id
+          break
+        }
+      }
+
+      console.log(`[RTSP] ANNOUNCE from ${remote} on ${uri}`)
+      sendResponse(cseq, '200 OK')
+    }
+
+    const routeDescribe = (cseq: string) => {
+      if (this.publisherSdp) {
+        console.log(`[RTSP] Returning SDP (${this.publisherSdp.length} chars)`)
+        sendResponse(cseq, '200 OK', { 'Cache-Control': 'no-cache' }, this.publisherSdp)
+      } else {
+        console.log('[RTSP] DESCRIBE rejected: no publisher SDP yet')
+        sendResponse(cseq, '404 Not Found')
+      }
+    }
+
+    const routeSetup = (cseq: string, uri: string, headers: Record<string, string>) => {
+      const transport = headers['transport'] ?? ''
+      const match = transport.match(/interleaved=(\d+)-(\d+)/)
+      sessionId = generateSessionId()
+
+      if (match) {
+        rtpChannel = parseInt(match[1], 10)
+        currentPath = uri
+        this.subscribers.set(sessionId, {
+          socket,
+          sessionId,
+          rtpChannel: parseInt(match[1], 10),
+          rtcpChannel: parseInt(match[2], 10),
+          playing: false,
+        })
+      }
+
+      sendResponse(cseq, '200 OK', {
+        Transport: 'RTP/AVP/TCP;unicast;interleaved=' + rtpChannel + '-' + (rtpChannel + 1),
+        Session: sessionId,
+      })
+    }
+
+    const routePlay = (cseq: string, uri: string) => {
+      const sess = this.subscribers.get(sessionId)
+      if (sess) {
+        sess.playing = true
+        for (const frame of this.rtpRingBuffer) {
+          try {
+            socket.write(Buffer.concat([interleavedHeader(rtpChannel, frame.length), frame]))
+          } catch {
+            /* silent */
+          }
+        }
+      }
+      sendResponse(cseq, '200 OK', {
+        Session: sessionId,
+        'RTP-Info': `url=${uri};seq=0;rtptime=0`,
+      })
+    }
+
+    const routeRecord = (cseq: string, uri: string) => {
+      console.log(`[RTSP] RECORD ${uri}`)
+      sendResponse(cseq, '200 OK', { Session: sessionId })
+      socket.removeListener('data', onData)
+      socket.on('data', onPublisherData)
+    }
+
+    const routeTeardown = (cseq: string, _uri: string, headers: Record<string, string>) => {
+      const sess = headers['session']?.split(';')[0] ?? ''
+      this.subscribers.delete(sess)
+      sendResponse(cseq, '200 OK')
+      socket.end()
+    }
+
+    const routeGetParameter = (cseq: string) => {
+      sendResponse(cseq, '200 OK', { Session: sessionId })
+    }
+
+    const routes: Record<
+      string,
+      (cseq: string, uri: string, headers: Record<string, string>, body: string) => void
+    > = {
+      OPTIONS: routeOptions,
+      ANNOUNCE: routeAnnounce,
+      DESCRIBE: routeDescribe,
+      SETUP: routeSetup,
+      PLAY: routePlay,
+      RECORD: routeRecord,
+      TEARDOWN: routeTeardown,
+      GET_PARAMETER: routeGetParameter,
+      SET_PARAMETER: routeGetParameter,
+    }
+
     const onRequest = (
       method: string,
       uri: string,
@@ -146,119 +259,12 @@ class RtspServer {
       const cseq = headers['cseq'] ?? '0'
       console.log(`[RTSP] ${method} ${uri} (CSeq: ${cseq}) from ${remote}`)
 
-      if (method === 'OPTIONS') {
-        sendResponse(cseq, '200 OK', {
-          Public:
-            'DESCRIBE, ANNOUNCE, SETUP, PLAY, TEARDOWN, OPTIONS, GET_PARAMETER, SET_PARAMETER',
-        })
-        return
+      const handler = routes[method]
+      if (handler) {
+        handler(cseq, uri, headers, body)
+      } else {
+        sendResponse(cseq, '501 Not Implemented')
       }
-
-      if (method === 'ANNOUNCE') {
-        isPublisher = true
-        currentPath = uri
-        this.publisherSocket = socket
-        this.publisherSdp = body
-
-        // Remove publisher from subscribers if it did SETUP first
-        for (const [id, sess] of this.subscribers.entries()) {
-          if (sess.socket === socket) {
-            this.subscribers.delete(id)
-            this.publisherSessionId = id
-            break
-          }
-        }
-
-        console.log(`[RTSP] ANNOUNCE from ${remote} on ${uri}`)
-
-        sendResponse(cseq, '200 OK')
-        return
-      }
-
-      if (method === 'DESCRIBE') {
-        if (this.publisherSdp) {
-          console.log(`[RTSP] Returning SDP (${this.publisherSdp.length} chars)`)
-          sendResponse(
-            cseq,
-            '200 OK',
-            {
-              'Cache-Control': 'no-cache',
-            },
-            this.publisherSdp
-          )
-        } else {
-          console.log('[RTSP] DESCRIBE rejected: no publisher SDP yet')
-          sendResponse(cseq, '404 Not Found')
-        }
-        return
-      }
-
-      if (method === 'SETUP') {
-        const transport = headers['transport'] ?? ''
-        const match = transport.match(/interleaved=(\d+)-(\d+)/)
-        sessionId = generateSessionId()
-
-        if (match) {
-          rtpChannel = parseInt(match[1], 10)
-          currentPath = uri
-          this.subscribers.set(sessionId, {
-            socket,
-            sessionId,
-            rtpChannel: parseInt(match[1], 10),
-            rtcpChannel: parseInt(match[2], 10),
-            playing: false,
-          })
-        }
-
-        sendResponse(cseq, '200 OK', {
-          Transport:
-            'RTP/AVP/TCP;unicast;interleaved=' + (rtpChannel ?? 0) + '-' + ((rtpChannel ?? 0) + 1),
-          Session: sessionId,
-        })
-        return
-      }
-
-      if (method === 'PLAY') {
-        const sess = this.subscribers.get(sessionId)
-        if (sess) {
-          sess.playing = true
-          for (const frame of this.rtpRingBuffer) {
-            try {
-              socket.write(Buffer.concat([interleavedHeader(rtpChannel, frame.length), frame]))
-            } catch {
-              /* silent */
-            }
-          }
-        }
-        sendResponse(cseq, '200 OK', {
-          Session: sessionId,
-          'RTP-Info': `url=${uri};seq=0;rtptime=0`,
-        })
-        return
-      }
-
-      if (method === 'RECORD') {
-        console.log(`[RTSP] RECORD ${uri} (CSeq: ${cseq})`)
-        sendResponse(cseq, '200 OK', { Session: sessionId })
-        socket.removeListener('data', onData)
-        socket.on('data', onPublisherData)
-        return
-      }
-
-      if (method === 'TEARDOWN') {
-        const sess = headers['session']?.split(';')[0] ?? ''
-        this.subscribers.delete(sess)
-        sendResponse(cseq, '200 OK')
-        socket.end()
-        return
-      }
-
-      if (method === 'GET_PARAMETER' || method === 'SET_PARAMETER') {
-        sendResponse(cseq, '200 OK', { Session: sessionId })
-        return
-      }
-
-      sendResponse(cseq, '501 Not Implemented')
     }
 
     const onData = (raw: Buffer) => {

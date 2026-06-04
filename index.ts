@@ -9,7 +9,8 @@ import { OnvifServer } from './src/onvif/server'
 import { createRtspServer } from './src/rtsp/server'
 
 const APP_URL = 'http://localhost:5173'
-const RTSP_URL = `rtsp://localhost:${rtspConfig.port}${rtspConfig.path}`
+// Must be 127.0.0.1 due to IPv4 binding, localhost may resolve to ::1 IPv6 which causes ffmpeg to fail to connect
+const RTSP_URL = `rtsp://127.0.0.1:${rtspConfig.port}${rtspConfig.path}`
 const FRAMERATE = 1
 const INTERVAL = 600_000
 
