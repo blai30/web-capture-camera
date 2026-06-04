@@ -1,6 +1,0 @@
-rtspTransports: [udp, multicast, tcp]
-rtspAddress: :554
-
-paths:
-  weather:
-    source: publisher

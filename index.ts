@@ -3,13 +3,26 @@ import { spawn } from 'child_process'
 
 import puppeteer from 'puppeteer'
 
-const DEV_MODE = process.env.NODE_ENV === 'development'
-const APP_URL = DEV_MODE ? 'http://localhost:5173' : 'http://vite-app:5173'
-const RTSP_URL = DEV_MODE ? 'rtsp://localhost:554/weather' : 'rtsp://mediamtx:554/weather'
-const FRAMERATE = 1
+import { rtspConfig } from './src/onvif/config'
+import { WsDiscovery } from './src/onvif/discovery'
+import { OnvifServer } from './src/onvif/server'
+import { createRtspServer } from './src/rtsp/server'
+
+const APP_URL = 'http://localhost:5173'
+const RTSP_URL = `rtsp://127.0.0.1:${rtspConfig.port}${rtspConfig.path}`
+const FRAMERATE = 5
 const INTERVAL = 600_000
 
 async function main() {
+  const rtsp = createRtspServer()
+  await rtsp.start()
+
+  const onvif = new OnvifServer()
+  await onvif.start()
+
+  const discovery = new WsDiscovery()
+  discovery.start()
+
   const browser = await puppeteer.launch({
     headless: true,
     args: [
@@ -90,8 +103,7 @@ async function main() {
   // Push to ffmpeg stdin at 1 fps to keep stream alive
   setInterval(() => {
     if (latestFrame && !ffmpeg.stdin.destroyed) {
-      const success = ffmpeg.stdin.write(latestFrame)
-      if (!success) ffmpeg.stdin.once('drain', () => {})
+      ffmpeg.stdin.write(latestFrame, () => {})
     }
   }, 1000)
 }

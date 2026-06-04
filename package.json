@@ -5,7 +5,6 @@
   "scripts": {
     "dev": "vite",
     "dev:server": "tsx watch index.ts",
-    "dev:docker:up": "docker compose -f docker-compose.dev.yml up --build",
     "build": "vite build",
     "preview": "vite preview",
     "lint": "oxlint",
@@ -26,6 +25,7 @@
     "lucide-preact": "^1.17.0",
     "preact": "^10.29.2",
     "puppeteer": "^25.1.0",
+    "soap": "^1.9.3",
     "tailwindcss": "^4.3.0"
   },
   "devDependencies": {
