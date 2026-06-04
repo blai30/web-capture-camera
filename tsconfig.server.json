@@ -1,12 +1,19 @@
 {
   "compilerOptions": {
-    "target": "es2023",
+    "target": "es2024",
+    "lib": ["ES2024"],
     "module": "esnext",
-    "moduleResolution": "bundler",
-    "strict": true,
-    "esModuleInterop": true,
+    "types": ["node"],
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "erasableSyntaxOnly": true,
+    "noFallthroughCasesInSwitch": true,
+    "strictNullChecks": true
   },
-  "include": ["index.ts"]
+  "include": ["server"],
+  "exclude": ["src"]
 }

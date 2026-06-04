@@ -6,11 +6,6 @@ import type {
   LocationConfig,
 } from '@/lib/weather-types'
 
-const CACHE_DURATION_MS = 10 * 60 * 1000 // 10 minutes
-
-let cachedData: WeatherData | null = null
-let cachedAt = 0
-
 async function fetchConfig(): Promise<LocationConfig> {
   return {
     latitude: import.meta.env.VITE_WEATHER_LAT || 40.7128,
@@ -92,15 +87,5 @@ async function fetchFromOpenMeteo(location: LocationConfig): Promise<WeatherData
 
 export async function getWeatherData(): Promise<WeatherData> {
   const location = await fetchConfig()
-
-  // Use cache if still valid
-  const now = Date.now()
-  if (cachedData && now - cachedAt < CACHE_DURATION_MS) {
-    return cachedData
-  }
-
-  const data = await fetchFromOpenMeteo(location)
-  cachedData = data
-  cachedAt = now
-  return data
+  return fetchFromOpenMeteo(location)
 }
