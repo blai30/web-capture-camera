@@ -1,0 +1,17 @@
+services:
+  weather-dash:
+    build: .
+    image: weather-dash:latest
+    container_name: weather-dash
+    # network_mode: host is REQUIRED, not optional:
+    #  - WS-Discovery uses UDP multicast 239.255.255.250:3702; Docker's bridge network does not
+    #    forward LAN multicast, so an NVR's Probe never reaches the container and discovery fails.
+    #  - The ONVIF/RTSP URIs are advertised as DEVICE_HOSTNAME (the Pi's LAN IP); host networking
+    #    lets clients reach them exactly as advertised (bridge NAT would break the return path).
+    #  - RTSP port 554 (<1024) and APP_PORT bind directly on the host.
+    # Ports exposed on the LAN: 554 (RTSP), 8020 (ONVIF SOAP + snapshot),
+    # 8080 (dashboard SPA / APP_PORT), 3702/udp (WS-Discovery).
+    network_mode: host
+    env_file:
+      - .env
+    restart: unless-stopped

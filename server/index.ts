@@ -1,4 +1,5 @@
 import 'dotenv/config'
+import { createFrontendServer } from './frontend/server'
 import { rtspConfig } from './onvif/config'
 import { createOnvifDevice } from './onvif/device'
 import { createWsDiscovery } from './onvif/discovery'
@@ -7,7 +8,6 @@ import { createCapturer } from './publisher/capture'
 import { createStream } from './publisher/stream'
 import { createRtspServer } from './rtsp/server'
 
-const APP_URL = 'http://localhost:5173'
 // Must be 127.0.0.1 due to IPv4 binding;
 // localhost may resolve to ::1 IPv6 which causes ffmpeg to fail to connect
 const RTSP_URL = `rtsp://127.0.0.1:${rtspConfig.port}${rtspConfig.path}`
@@ -19,8 +19,11 @@ async function main() {
 
   const device = createOnvifDevice()
 
+  await using frontend = createFrontendServer()
+  await frontend.start()
+
   await using capturer = createCapturer({
-    url: APP_URL,
+    url: process.env.APP_URL ?? frontend.url,
     viewport: { width: 1280, height: 720 },
   })
 

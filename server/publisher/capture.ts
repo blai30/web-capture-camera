@@ -29,6 +29,7 @@ export function createCapturer(options: CapturerOptions) {
     console.log('[Capture] Launching browser')
     browser = await puppeteer.launch({
       headless: true,
+      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
       args: CHROMIUM_LAUNCH_ARGS,
     })
     console.log('[Capture] Browser launched, opening page')
