@@ -4,12 +4,14 @@ import { spawn, ChildProcess } from 'child_process'
 import puppeteer, { Browser } from 'puppeteer'
 
 import { rtspConfig } from './onvif/config'
+import { createOnvifDevice } from './onvif/device'
 import { createWsDiscovery } from './onvif/discovery'
 import { createOnvifServer } from './onvif/server'
 import { createRtspServer } from './rtsp/server'
 
 const APP_URL = 'http://localhost:5173'
-// Must be 127.0.0.1 due to IPv4 binding, localhost may resolve to ::1 IPv6 which causes ffmpeg to fail to connect
+// Must be 127.0.0.1 due to IPv4 binding;
+// localhost may resolve to ::1 IPv6 which causes ffmpeg to fail to connect
 const RTSP_URL = `rtsp://127.0.0.1:${rtspConfig.port}${rtspConfig.path}`
 const FRAMERATE = 1
 const INTERVAL = 600_000
@@ -18,10 +20,11 @@ async function main() {
   await using rtsp = createRtspServer()
   await rtsp.start()
 
-  await using onvif = createOnvifServer()
+  const device = createOnvifDevice()
+  await using onvif = createOnvifServer(device)
   await onvif.start()
 
-  await using discovery = createWsDiscovery()
+  await using discovery = createWsDiscovery(device)
   discovery.start()
 
   const browser: Browser = await puppeteer.launch({
