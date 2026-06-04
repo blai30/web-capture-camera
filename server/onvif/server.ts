@@ -4,15 +4,28 @@ import http from 'http'
 import soap from 'soap'
 
 import { onvifConfig } from './config'
-import type { OnvifDevice } from './device'
+import { SNAPSHOT_PATH, type OnvifDevice } from './device'
 
 const deviceWSDL = fs.readFileSync(new URL('wsdl/device_service.wsdl', import.meta.url), 'utf8')
 const mediaWSDL = fs.readFileSync(new URL('wsdl/media_service.wsdl', import.meta.url), 'utf8')
 
-export function createOnvifServer(device: OnvifDevice, options?: { port?: number }) {
+export type SnapshotSource = () => Uint8Array<ArrayBufferLike> | null
+
+export function createOnvifServer(
+  device: OnvifDevice,
+  options?: { port?: number; snapshotSource?: SnapshotSource }
+) {
   const serverPort = options?.port ?? onvifConfig.port
+
+  // This handler is the final fallback in node-soap's request-listener chain: soap.listen()
+  // intercepts the two SOAP paths and delegates everything else here.
   const httpServer = http.createServer(
-    (_request: http.IncomingMessage, response: http.ServerResponse) => {
+    (request: http.IncomingMessage, response: http.ServerResponse) => {
+      const pathname = (request.url ?? '').split('?')[0]
+      if (pathname === SNAPSHOT_PATH) {
+        serveSnapshot(response, options?.snapshotSource?.() ?? null)
+        return
+      }
       response.writeHead(404)
       response.end('Not Found')
     }
@@ -45,7 +58,7 @@ export function createOnvifServer(device: OnvifDevice, options?: { port?: number
               GetVideoSources: () => device.getVideoSources(),
               GetStreamUri: () => ({
                 MediaUri: {
-                  Uri: device.streamUri(),
+                  Uri: device.streamUri,
                   InvalidAfterConnect: false,
                   InvalidAfterReboot: false,
                   Timeout: 'PT30S',
@@ -53,7 +66,7 @@ export function createOnvifServer(device: OnvifDevice, options?: { port?: number
               }),
               GetSnapshotUri: () => ({
                 MediaUri: {
-                  Uri: device.snapshotUri(),
+                  Uri: device.snapshotUri,
                   InvalidAfterConnect: false,
                   InvalidAfterReboot: false,
                   Timeout: 'PT30S',
@@ -80,4 +93,17 @@ export function createOnvifServer(device: OnvifDevice, options?: { port?: number
     })
 
   return { start, [Symbol.asyncDispose]: asyncDispose }
+}
+
+function serveSnapshot(response: http.ServerResponse, frame: Uint8Array<ArrayBufferLike> | null) {
+  if (!frame) {
+    response.writeHead(503)
+    response.end('No frame available yet')
+    return
+  }
+  response.writeHead(200, {
+    'Content-Type': 'image/png',
+    'Content-Length': frame.length,
+  })
+  response.end(frame)
 }

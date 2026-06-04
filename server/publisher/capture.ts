@@ -23,6 +23,7 @@ export type CapturerOptions = {
 export function createCapturer(options: CapturerOptions) {
   let browser: Browser | null = null
   let page: Page | null = null
+  let latestFrame: Uint8Array<ArrayBufferLike> | null = null
 
   async function start() {
     console.log('[Capture] Launching browser')
@@ -45,14 +46,21 @@ export function createCapturer(options: CapturerOptions) {
 
   async function captureFrame() {
     if (!page) throw new Error('page renderer not started')
-    return await page.screenshot({ type: 'png' })
+    latestFrame = await page.screenshot({ type: 'png' })
+    return latestFrame
+  }
+
+  // The most recently captured frame, or null before the first capture. Shared with the ONVIF
+  // snapshot endpoint so a snapshot serves the exact frame already going out over the stream.
+  function getLatestFrame(): Uint8Array<ArrayBufferLike> | null {
+    return latestFrame
   }
 
   const asyncDispose = async () => {
     if (browser) await browser.close()
   }
 
-  return { start, captureFrame, [Symbol.asyncDispose]: asyncDispose }
+  return { start, captureFrame, getLatestFrame, [Symbol.asyncDispose]: asyncDispose }
 }
 
 async function waitForUrl(url: string) {

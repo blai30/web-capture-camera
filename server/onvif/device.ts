@@ -3,7 +3,9 @@ import { onvifConfig, deviceConfig, rtspConfig, profiles, type ProfileConfig } f
 const DEVICE_SERVICE_NAMESPACE = 'http://www.onvif.org/ver10/device/wsdl'
 const MEDIA_SERVICE_NAMESPACE = 'http://www.onvif.org/ver10/media/wsdl'
 const ONVIF_VERSION = { major: 2, minor: 5 }
-const VITE_DEV_PORT = 5173
+
+// HTTP path on the ONVIF server that serves the current frame as a snapshot image.
+export const SNAPSHOT_PATH = '/onvif/snapshot'
 
 export type OnvifService = {
   name: 'Device' | 'Media'
@@ -147,14 +149,6 @@ export function createOnvifDevice() {
     }
   }
 
-  function streamUri(): string {
-    return `rtsp://${onvifConfig.hostname}:${rtspConfig.port}${rtspConfig.path}`
-  }
-
-  function snapshotUri(): string {
-    return `http://${onvifConfig.hostname}:${VITE_DEV_PORT}`
-  }
-
   return {
     urn,
     hostname: onvifConfig.hostname,
@@ -168,8 +162,8 @@ export function createOnvifDevice() {
     getSystemDateAndTime,
     getProfilesResponse,
     getVideoSources,
-    streamUri,
-    snapshotUri,
+    streamUri: `rtsp://${onvifConfig.hostname}:${rtspConfig.port}${rtspConfig.path}`,
+    snapshotUri: `http://${onvifConfig.hostname}:${onvifConfig.port}${SNAPSHOT_PATH}`,
   }
 }
 

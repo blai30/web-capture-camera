@@ -18,16 +18,20 @@ async function main() {
   await rtsp.start()
 
   const device = createOnvifDevice()
-  await using onvif = createOnvifServer(device)
-  await onvif.start()
-
-  await using discovery = createWsDiscovery(device)
-  discovery.start()
 
   await using capturer = createCapturer({
     url: APP_URL,
     viewport: { width: 1280, height: 720 },
   })
+
+  await using onvif = createOnvifServer(device, {
+    snapshotSource: () => capturer.getLatestFrame(),
+  })
+  await onvif.start()
+
+  await using discovery = createWsDiscovery(device)
+  discovery.start()
+
   await capturer.start()
 
   await using stream = createStream({
