@@ -14,7 +14,7 @@ export class OnvifServer {
 
   constructor(options?: { port?: number }) {
     this.port = options?.port ?? onvifConfig.port
-    this.httpServer = http.createServer((req, res) => {
+    this.httpServer = http.createServer((_req: http.IncomingMessage, res: http.ServerResponse) => {
       res.writeHead(404)
       res.end('Not Found')
     })

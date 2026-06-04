@@ -3,10 +3,10 @@ import { spawn } from 'child_process'
 
 import puppeteer from 'puppeteer'
 
-import { rtspConfig } from './src/onvif/config'
-import { WsDiscovery } from './src/onvif/discovery'
-import { OnvifServer } from './src/onvif/server'
-import { createRtspServer } from './src/rtsp/server'
+import { rtspConfig } from './onvif/config'
+import { WsDiscovery } from './onvif/discovery'
+import { OnvifServer } from './onvif/server'
+import { createRtspServer } from './rtsp/server'
 
 const APP_URL = 'http://localhost:5173'
 // Must be 127.0.0.1 due to IPv4 binding, localhost may resolve to ::1 IPv6 which causes ffmpeg to fail to connect

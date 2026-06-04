@@ -37,8 +37,8 @@ export class WsDiscovery {
       }
     )
 
-    this.socket.on('message', (message) => {
-      const text = message.toString()
+    this.socket.on('message', (_message: Buffer, _info: { address: string; port: number }) => {
+      const text = _message.toString()
       if (text.includes('Probe') && text.includes('NetworkVideoTransmitter')) {
         const probeMessageId = extractMessageId(text)
         if (probeMessageId) {
@@ -47,7 +47,7 @@ export class WsDiscovery {
       }
     })
 
-    this.socket.on('error', (error) => {
+    this.socket.on('error', (error: Error) => {
       console.error('[WS-Discovery] Error:', error.message)
     })
   }
