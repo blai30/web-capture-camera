@@ -8,9 +8,6 @@ type ForecastPanelProperties = {
   hourly: HourlyForecast[]
 }
 
-const CHART_WIDTH = 470
-const CHART_HEIGHT = 210
-
 // Open-Meteo returns location-local times with no offset,
 // so the hour is read straight from the string, no timezone conversion needed.
 function readHour(isoTime: string): number {
@@ -31,28 +28,33 @@ export function ForecastPanel({ hourly }: ForecastPanelProperties) {
         Next 5 hours
       </h2>
 
-      <div class="flex flex-1 flex-col items-center justify-center gap-8">
-        <div class="grid grid-cols-5 gap-2" style={{ width: `${CHART_WIDTH}px` }}>
-          {hourly.map((entry) => (
-            <div key={entry.time} class="flex flex-col items-center gap-2 text-(--text)">
-              <span class="text-2xl font-medium text-(--text-muted)">{formatHour(entry.time)}</span>
-              <div class="text-(--accent)">
-                <WeatherIcon
-                  code={entry.weatherCode}
-                  isDay={readHour(entry.time) >= 6 && readHour(entry.time) < 19}
-                  size={54}
-                />
+      <div class="flex flex-1 flex-col items-center justify-center">
+        {/* w-120 sizes both rows; the chart reads this width via ParentSize. */}
+        <div class="flex w-120 flex-col gap-8">
+          <div class="grid grid-cols-5 gap-2">
+            {hourly.map((entry) => (
+              <div key={entry.time} class="flex flex-col items-center gap-2 text-(--text)">
+                <span class="text-2xl font-medium text-(--text-muted)">
+                  {formatHour(entry.time)}
+                </span>
+                <div class="text-(--accent)">
+                  <WeatherIcon
+                    code={entry.weatherCode}
+                    isDay={readHour(entry.time) >= 6 && readHour(entry.time) < 19}
+                    size={54}
+                  />
+                </div>
+                <span class="text-4xl font-bold">{Math.round(entry.temperature)}°</span>
+                <span class="inline-flex items-center gap-1.5 text-xl text-(--text-muted)">
+                  <Droplet size={22} />
+                  {entry.precipitationProbability}%
+                </span>
               </div>
-              <span class="text-4xl font-bold">{Math.round(entry.temperature)}°</span>
-              <span class="inline-flex items-center gap-1.5 text-xl text-(--text-muted)">
-                <Droplet size={22} />
-                {entry.precipitationProbability}%
-              </span>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
 
-        <ForecastChart hourly={hourly} width={CHART_WIDTH} height={CHART_HEIGHT} />
+          <ForecastChart hourly={hourly} />
+        </div>
       </div>
     </section>
   )

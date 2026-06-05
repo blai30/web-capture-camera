@@ -8,3 +8,102 @@
     'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono',
     'Courier New', monospace;
 }
+
+@layer base {
+
+  /* Shared, condition-independent tokens. Text/surface stay constant so contrast
+     is reliable on the streamed feed; only the gradient + accent change. */
+  :root {
+    --text: #f8fafc;
+    --text-muted: rgba(241, 245, 249, 0.86);
+    /* Dark smoked-glass surface (flat, borderless) so cards/tiles back their
+       text with enough contrast even over bright condition backdrops. */
+    --surface: rgba(2, 6, 23, 0.3);
+  }
+}
+
+/* Condition-reactive palettes. The dashboard root gets one of these classes
+   (theme-<group>-<day|night>); descendants read the vars via utilities such as
+   `text-(--text)` or gradient stops `from-(--background-from)`. */
+.theme-clear-day {
+  --background-from: #0ea5e9;
+  --background-to: #0369a1;
+  --accent: #fbbf24;
+}
+
+.theme-clear-night {
+  --background-from: #1e1b4b;
+  --background-to: #0b1120;
+  --accent: #c7d2fe;
+}
+
+.theme-cloudy-day {
+  --background-from: #64748b;
+  --background-to: #334155;
+  --accent: #e2e8f0;
+}
+
+.theme-cloudy-night {
+  --background-from: #334155;
+  --background-to: #0f172a;
+  --accent: #cbd5e1;
+}
+
+.theme-fog-day {
+  --background-from: #94a3b8;
+  --background-to: #64748b;
+  --accent: #f1f5f9;
+}
+
+.theme-fog-night {
+  --background-from: #475569;
+  --background-to: #1e293b;
+  --accent: #e2e8f0;
+}
+
+.theme-rain-day {
+  --background-from: #1d4ed8;
+  --background-to: #1e3a8a;
+  --accent: #7dd3fc;
+}
+
+.theme-rain-night {
+  --background-from: #172554;
+  --background-to: #0b1120;
+  --accent: #60a5fa;
+}
+
+.theme-snow-day {
+  --background-from: #7dd3fc;
+  --background-to: #3b82f6;
+  --accent: #f0f9ff;
+}
+
+.theme-snow-night {
+  --background-from: #334155;
+  --background-to: #0f172a;
+  --accent: #e0f2fe;
+}
+
+.theme-thunder-day {
+  --background-from: #5b21b6;
+  --background-to: #312e81;
+  --accent: #fde047;
+}
+
+.theme-thunder-night {
+  --background-from: #2e1065;
+  --background-to: #0b1120;
+  --accent: #fde047;
+}
+
+/* Scrim over the condition backdrop: a palette tint that blends the texture
+   toward the condition colors, over a flat black layer that guarantees a
+   contrast floor on bright textures (snow, clear day, fog). */
+@utility condition-scrim {
+  background:
+    linear-gradient(135deg,
+      color-mix(in oklab, var(--background-from) 70%, transparent),
+      color-mix(in oklab, var(--background-to) 58%, transparent)),
+    linear-gradient(rgba(0, 0, 0, 0.24), rgba(0, 0, 0, 0.24));
+}

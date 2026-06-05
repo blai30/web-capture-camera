@@ -1,9 +1,11 @@
+import { clsx } from 'clsx/lite'
+
 import { ConditionBackdrop } from '@/components/condition-backdrop'
 import { CurrentConditions } from '@/components/current-conditions'
 import { DashboardHeader } from '@/components/dashboard-header'
 import { ForecastPanel } from '@/components/forecast-panel'
 import { useWeather } from '@/hooks/use-weather'
-import { paletteFor } from '@/lib/theme'
+import { themeClassFor } from '@/lib/theme'
 import { describeWeatherCode } from '@/lib/weather-codes'
 
 export function Dashboard() {
@@ -19,12 +21,13 @@ export function Dashboard() {
   }
 
   const { group } = describeWeatherCode(data.current.weatherCode)
-  const palette = paletteFor(group, data.current.isDay)
 
   return (
     <div
-      class="relative h-full w-full overflow-hidden bg-linear-to-b from-(--background-from) to-(--background-to)"
-      style={palette}
+      class={clsx(
+        'relative h-full w-full overflow-hidden bg-linear-to-b from-(--background-from) to-(--background-to)',
+        themeClassFor(group, data.current.isDay)
+      )}
     >
       <ConditionBackdrop group={group} isDay={data.current.isDay} />
 

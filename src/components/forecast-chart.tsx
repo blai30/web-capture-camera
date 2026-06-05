@@ -1,6 +1,7 @@
 import { curveNatural } from '@visx/curve'
 import { LinearGradient } from '@visx/gradient'
 import { Group } from '@visx/group'
+import { ParentSize } from '@visx/responsive'
 import { scaleLinear, scalePoint } from '@visx/scale'
 import { AreaClosed, LinePath } from '@visx/shape'
 
@@ -8,6 +9,9 @@ import type { HourlyForecast } from '@/lib/weather-types'
 
 type ForecastChartProperties = {
   hourly: HourlyForecast[]
+}
+
+type ChartContentProperties = ForecastChartProperties & {
   width: number
   height: number
 }
@@ -21,7 +25,7 @@ type ChartPoint = {
   y: number
 }
 
-export function ForecastChart({ hourly, width, height }: ForecastChartProperties) {
+function ChartContent({ hourly, width, height }: ChartContentProperties) {
   const temperatures = hourly.map((entry) => entry.temperature)
   const minimumTemperature = Math.min(...temperatures)
   const maximumTemperature = Math.max(...temperatures)
@@ -129,5 +133,19 @@ export function ForecastChart({ hourly, width, height }: ForecastChartProperties
         ))}
       </Group>
     </svg>
+  )
+}
+
+// Width and height come from the surrounding layout (the Tailwind-sized
+// container) via ParentSize, so there is no pixel constant in this module.
+export function ForecastChart({ hourly }: ForecastChartProperties) {
+  return (
+    <div class="h-52 w-full">
+      <ParentSize>
+        {({ width, height }) =>
+          width > 0 ? <ChartContent hourly={hourly} width={width} height={height} /> : null
+        }
+      </ParentSize>
+    </div>
   )
 }
