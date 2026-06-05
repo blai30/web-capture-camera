@@ -1,7 +1,7 @@
 import dgram from 'dgram'
 
-import { createLogger } from '../log'
-import type { OnvifDevice } from './device'
+import { createLogger } from '../log.ts'
+import type { OnvifDevice } from './device.ts'
 
 const logger = createLogger('ws-discovery')
 

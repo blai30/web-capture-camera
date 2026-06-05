@@ -1,4 +1,4 @@
-import type { NalClassification } from './relay'
+import type { NalClassification } from './relay.ts'
 
 // H.264 NAL unit types (RFC 6184 §1.3).
 const NAL_TYPE_IDR_SLICE = 5

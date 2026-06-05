@@ -3,7 +3,7 @@ import path from 'path'
 
 import sirv from 'sirv'
 
-import { createLogger } from '../log'
+import { createLogger } from '../log.ts'
 
 const logger = createLogger('frontend')
 

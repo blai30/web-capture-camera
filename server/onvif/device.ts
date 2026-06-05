@@ -1,4 +1,4 @@
-import { onvifConfig, deviceConfig, rtspConfig, profiles, type ProfileConfig } from './config'
+import { onvifConfig, deviceConfig, rtspConfig, profiles, type ProfileConfig } from './config.ts'
 
 const DEVICE_SERVICE_NAMESPACE = 'http://www.onvif.org/ver10/device/wsdl'
 const MEDIA_SERVICE_NAMESPACE = 'http://www.onvif.org/ver10/media/wsdl'

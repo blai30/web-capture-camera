@@ -1,6 +1,6 @@
 import { spawn, type ChildProcess } from 'child_process'
 
-import { createLogger } from '../log'
+import { createLogger } from '../log.ts'
 
 const logger = createLogger('stream')
 

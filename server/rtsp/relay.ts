@@ -1,4 +1,4 @@
-import { classifyH264NalUnit } from './h264'
+import { classifyH264NalUnit } from './h264.ts'
 
 const INTERLEAVED_PREFIX = 0x24
 const DEFAULT_MAX_GOP_PACKETS = 512
