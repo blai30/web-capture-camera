@@ -8,6 +8,7 @@ import { defineConfig } from 'vite'
 export default defineConfig({
   server: {
     port: parseInt(process.env.APP_PORT ?? '5173', 10),
+    strictPort: true,
   },
   plugins: [preact(), tailwindcss()],
   resolve: {
