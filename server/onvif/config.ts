@@ -10,11 +10,11 @@ export const onvifConfig = {
 }
 
 export const deviceConfig = {
-  manufacturer: process.env.DEVICE_MANUFACTURER ?? 'WeatherDash',
-  model: process.env.DEVICE_MODEL ?? 'VirtualCamera',
+  manufacturer: process.env.DEVICE_MANUFACTURER ?? 'ViteCam',
+  model: process.env.DEVICE_MODEL ?? 'Forecast',
   firmwareVersion: '2.0.0',
-  serialNumber: 'weather-dash-0000',
-  hardwareId: 'weather-dash-1001',
+  serialNumber: 'vitecam-forecast-0000',
+  hardwareId: 'vitecam-forecast-1001',
   macAddress: process.env.DEVICE_MAC ?? '2C:CF:67:F7:F2:49',
 }
 
