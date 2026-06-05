@@ -1,3 +1,4 @@
+import { findCurrentHourIndex } from '@/lib/forecast'
 import type {
   WeatherData,
   CurrentWeather,
@@ -52,19 +53,18 @@ async function fetchFromOpenMeteo(location: LocationConfig): Promise<WeatherData
     precipitationProbability: 0,
   }
 
-  // Derive current precipitation probability from hourly data
-  const now = new Date().toISOString().slice(0, 13)
-  const currentHourIndex = json.hourly.time.findIndex((t: string) => t >= now)
-  if (currentHourIndex >= 0) {
-    current.precipitationProbability = json.hourly.precipitation_probability[currentHourIndex] ?? 0
-  }
-
   const hourly: HourlyEntry[] = json.hourly.time.map((time: string, i: number) => ({
     time,
     temperature: json.hourly.temperature_2m[i],
     weatherCode: json.hourly.weather_code[i],
     precipitationProbability: json.hourly.precipitation_probability[i] ?? 0,
   }))
+
+  // Derive current precipitation probability from the current hour. Open-Meteo
+  // returns times in the location's local timezone (json.timezone, via
+  // timezone=auto), so the current hour must be matched in that same zone.
+  const currentHourIndex = findCurrentHourIndex(hourly, json.timezone)
+  current.precipitationProbability = hourly[currentHourIndex]?.precipitationProbability ?? 0
 
   const daily: DailyEntry[] = json.daily.time.map((date: string, i: number) => ({
     date,
