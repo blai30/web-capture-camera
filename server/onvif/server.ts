@@ -3,9 +3,9 @@ import http from 'http'
 
 import soap from 'soap'
 
-import { createLogger } from '../log'
-import { onvifConfig } from './config'
-import { SNAPSHOT_PATH, type OnvifDevice } from './device'
+import { createLogger } from '../log.ts'
+import { onvifConfig } from './config.ts'
+import { SNAPSHOT_PATH, type OnvifDevice } from './device.ts'
 
 const logger = createLogger('onvif')
 

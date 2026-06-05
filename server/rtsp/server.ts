@@ -1,8 +1,8 @@
 import net from 'net'
 
-import { createLogger } from '../log'
-import { rtspConfig } from '../onvif/config'
-import { createStreamRelay, PublisherBusyError, type SubscriberHandle } from './relay'
+import { createLogger } from '../log.ts'
+import { rtspConfig } from '../onvif/config.ts'
+import { createStreamRelay, PublisherBusyError, type SubscriberHandle } from './relay.ts'
 
 const logger = createLogger('rtsp')
 

@@ -1,4 +1,5 @@
-# forecast-onvif is an ONVIF "weather camera": a tsx-run Node process that renders the Preact
+# forecast-onvif is an ONVIF "weather camera": a Node 24 process running TypeScript directly (via
+# native type stripping, no build step) that renders the Preact
 # dashboard in headless Chromium, encodes screenshots to H.264 via ffmpeg, and serves them over
 # RTSP + ONVIF. Built for linux/arm64 (Raspberry Pi 5); build natively on the Pi.
 
@@ -31,13 +32,14 @@ ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
 RUN corepack enable
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-# --prod=false: the app runs uncompiled via tsx (a devDependency), so dev deps are required.
-RUN pnpm install --frozen-lockfile --prod=false
+# --prod: Node strips types itself, so no build toolchain is needed at runtime, only the runtime
+# dependencies. pino-pretty is a devDependency loaded only when NODE_ENV=development, which prod
+# never sets, so omitting dev deps is safe.
+RUN pnpm install --frozen-lockfile --prod
 
-# Uncompiled server source + built frontend. wsdl files live under server/onvif and are read at
-# runtime, so copying the server tree is sufficient.
+# Uncompiled server source + built frontend. Node reads no tsconfig for type stripping, and the
+# wsdl files live under server/onvif and are read at runtime, so copying the server tree is enough.
 COPY server ./server
-COPY tsconfig*.json ./
 COPY --from=build /app/dist ./dist
 
-CMD ["pnpm", "exec", "tsx", "server/index.ts"]
+CMD ["node", "server/index.ts"]

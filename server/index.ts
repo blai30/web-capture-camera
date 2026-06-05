@@ -1,13 +1,13 @@
 import 'dotenv/config'
-import { createFrontendServer } from './frontend/server'
-import { createLogger } from './log'
-import { rtspConfig } from './onvif/config'
-import { createOnvifDevice } from './onvif/device'
-import { createWsDiscovery } from './onvif/discovery'
-import { createOnvifServer } from './onvif/server'
-import { createCapturer } from './publisher/capture'
-import { createStream } from './publisher/stream'
-import { createRtspServer } from './rtsp/server'
+import { createFrontendServer } from './frontend/server.ts'
+import { createLogger } from './log.ts'
+import { rtspConfig } from './onvif/config.ts'
+import { createOnvifDevice } from './onvif/device.ts'
+import { createWsDiscovery } from './onvif/discovery.ts'
+import { createOnvifServer } from './onvif/server.ts'
+import { createCapturer } from './publisher/capture.ts'
+import { createStream } from './publisher/stream.ts'
+import { createRtspServer } from './rtsp/server.ts'
 
 // Must be 127.0.0.1 due to IPv4 binding;
 // localhost may resolve to ::1 IPv6 which causes ffmpeg to fail to connect

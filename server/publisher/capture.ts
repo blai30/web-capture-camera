@@ -1,6 +1,6 @@
 import puppeteer, { type Browser, type Page } from 'puppeteer'
 
-import { createLogger } from '../log'
+import { createLogger } from '../log.ts'
 
 const logger = createLogger('capture')
 
