@@ -104,7 +104,7 @@ If you're integrating with Unifi Protect viewports, note the following:
 
 ## Snapshots & Thumbnails
 
-UniFi Protect displays device thumbnails in the camera list and hover previews by fetching the ONVIF snapshot via `GetSnapshotUri`. This application serves snapshots as **JPEG** (not PNG), as mandated by the [ONVIF Media Service specification (5.16.1)](https://www.onvif.org/specs/srv/media/ONVIF-Media-Service-Spec.pdf#page=50). The same JPEG frame is fed to both the snapshot HTTP endpoint (`/onvif/snapshot`) and the H.264 RTSP encoder for simplicity — this keeps the pipeline straightforward while satisfying the spec requirement.
+UniFi Protect displays device thumbnails in the camera list and hover previews by fetching the ONVIF snapshot via `GetSnapshotUri`. This application serves snapshots as **JPEG** (not PNG), as mandated by the [ONVIF Media Service specification (5.16.1)](https://www.onvif.org/specs/srv/media/ONVIF-Media-Service-Spec.pdf#page=50). The same JPEG frame is fed to both the snapshot HTTP endpoint (`/onvif/snapshot`) and the H.264 RTSP encoder for simplicity, this keeps the pipeline straightforward while satisfying the spec requirement.
 
 Without proper JPEG snapshot support, UniFi Protect will show a black tile and no hover preview for the camera. If thumbnails don't appear after adding the camera to Protect, ensure:
 

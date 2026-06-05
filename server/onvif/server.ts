@@ -3,8 +3,11 @@ import http from 'http'
 
 import soap from 'soap'
 
+import { createLogger } from '../log'
 import { onvifConfig } from './config'
 import { SNAPSHOT_PATH, type OnvifDevice } from './device'
+
+const logger = createLogger('onvif')
 
 const deviceWSDL = fs.readFileSync(new URL('wsdl/device_service.wsdl', import.meta.url), 'utf8')
 const mediaWSDL = fs.readFileSync(new URL('wsdl/media_service.wsdl', import.meta.url), 'utf8')
@@ -81,7 +84,7 @@ export function createOnvifServer(
 
       httpServer.on('error', reject)
       httpServer.listen(serverPort, '0.0.0.0', () => {
-        console.log(`[ONVIF] Server listening on port ${serverPort}`)
+        logger.info(`Server listening on port ${serverPort}`)
         resolve()
       })
     })

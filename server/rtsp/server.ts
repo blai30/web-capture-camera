@@ -1,7 +1,10 @@
 import net from 'net'
 
+import { createLogger } from '../log'
 import { rtspConfig } from '../onvif/config'
 import { createStreamRelay, PublisherBusyError, type SubscriberHandle } from './relay'
+
+const logger = createLogger('rtsp')
 
 const CRLF = '\r\n'
 
@@ -31,7 +34,7 @@ export function createRtspServer() {
     return new Promise<void>((resolve, reject) => {
       server.on('error', reject)
       server.listen(rtspConfig.port, '0.0.0.0', () => {
-        console.log(`[RTSP] Server listening on port ${rtspConfig.port}`)
+        logger.info(`Server listening on port ${rtspConfig.port}`)
         resolve()
       })
     })
@@ -59,7 +62,7 @@ export function createRtspServer() {
 
 function handleConnection(socket: net.Socket, relay: StreamRelay) {
   const remote = `${socket.remoteAddress}:${socket.remotePort}`
-  console.log(`[RTSP] Connection from ${remote}`)
+  logger.debug(`Connection from ${remote}`)
 
   socket.setKeepAlive(true, 15000)
   socket.setNoDelay(true)
@@ -110,7 +113,7 @@ function handleConnection(socket: net.Socket, relay: StreamRelay) {
       relay.attachPublisher(body)
     } catch (error) {
       if (error instanceof PublisherBusyError) {
-        console.log(`[RTSP] ANNOUNCE rejected from ${remote}: publisher already attached`)
+        logger.warn(`ANNOUNCE rejected from ${remote}: publisher already attached`)
         sendResponse(cseq, '503 Service Unavailable')
         return
       }
@@ -118,18 +121,18 @@ function handleConnection(socket: net.Socket, relay: StreamRelay) {
     }
 
     isPublisher = true
-    console.log(`[RTSP] ANNOUNCE from ${remote} on ${uri}`)
+    logger.info(`ANNOUNCE from ${remote} on ${uri}`)
     sendResponse(cseq, '200 OK')
   }
 
   function routeDescribe(cseq: string) {
     const sdp = relay.getSdp()
     if (!sdp) {
-      console.log('[RTSP] DESCRIBE rejected: no publisher SDP yet')
+      logger.debug('DESCRIBE rejected: no publisher SDP yet')
       sendResponse(cseq, '404 Not Found')
       return
     }
-    console.log(`[RTSP] Returning SDP (${sdp.length} chars)`)
+    logger.debug(`Returning SDP (${sdp.length} chars)`)
     sendResponse(cseq, '200 OK', { 'Cache-Control': 'no-cache' }, sdp)
   }
 
@@ -163,7 +166,7 @@ function handleConnection(socket: net.Socket, relay: StreamRelay) {
   }
 
   function routeRecord(cseq: string, uri: string) {
-    console.log(`[RTSP] RECORD ${uri}`)
+    logger.debug(`RECORD ${uri}`)
     sendResponse(cseq, '200 OK', { Session: sessionId })
     socket.removeListener('data', onData)
     socket.on('data', (chunk: Buffer) => relay.pushPublisherBytes(chunk))
@@ -197,7 +200,7 @@ function handleConnection(socket: net.Socket, relay: StreamRelay) {
 
   function onRequest(method: string, uri: string, headers: Record<string, string>, body: string) {
     const cseq = headers['cseq'] ?? '0'
-    console.log(`[RTSP] ${method} ${uri} (CSeq: ${cseq}) from ${remote}`)
+    logger.debug(`${method} ${uri} (CSeq: ${cseq}) from ${remote}`)
 
     const handler = routes[method]
     if (handler) {
@@ -231,7 +234,7 @@ function handleConnection(socket: net.Socket, relay: StreamRelay) {
   })
 
   socket.on('close', () => {
-    console.log(`[RTSP] Connection closed: ${remote}${isPublisher ? ' (publisher)' : ''}`)
+    logger.debug(`Connection closed: ${remote}${isPublisher ? ' (publisher)' : ''}`)
     if (isPublisher) relay.detachPublisher()
     handle?.detach()
     handle = null

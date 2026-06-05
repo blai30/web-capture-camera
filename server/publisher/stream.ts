@@ -1,5 +1,9 @@
 import { spawn, type ChildProcess } from 'child_process'
 
+import { createLogger } from '../log'
+
+const logger = createLogger('stream')
+
 const PUSH_INTERVAL_MS = 1000
 
 export type FrameSource = () => Promise<Uint8Array<ArrayBufferLike>>
@@ -17,7 +21,7 @@ export function createStream(options: StreamOptions) {
   let latestFrame: Uint8Array<ArrayBufferLike> | null = null
 
   async function start() {
-    console.log(`[Stream] Spawning ffmpeg, target: ${options.rtspUrl}`)
+    logger.info(`Spawning ffmpeg, target: ${options.rtspUrl}`)
     // oxfmt-ignore
     ffmpeg = spawn('ffmpeg', [
       // Input: JPEG frames via stdin at 1 fps.
@@ -49,18 +53,18 @@ export function createStream(options: StreamOptions) {
     ])
 
     ffmpeg.stderr?.on('data', (data: Buffer) => {
-      console.log(`[FFMPEG] ${data.toString()}`)
+      logger.debug(data.toString().trimEnd())
     })
     ffmpeg.on('error', (error: Error) => {
-      console.error(`[Stream] ffmpeg spawn error: ${error.message}`)
+      logger.error(`ffmpeg spawn error: ${error.message}`)
     })
     ffmpeg.on('exit', (code: number | null, signal: NodeJS.Signals | null) => {
-      console.log(`[Stream] ffmpeg exited (code=${code}, signal=${signal})`)
+      logger.info(`ffmpeg exited (code=${code}, signal=${signal})`)
     })
 
     const captureFrame = async () => {
       latestFrame = await options.source()
-      console.log(`Captured new frame at ${new Date().toISOString()}`)
+      logger.debug('Captured new frame')
     }
 
     await captureFrame()
