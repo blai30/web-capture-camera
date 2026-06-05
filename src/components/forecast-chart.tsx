@@ -140,7 +140,7 @@ function ChartContent({ hourly, width, height }: ChartContentProperties) {
 // container) via ParentSize, so there is no pixel constant in this module.
 export function ForecastChart({ hourly }: ForecastChartProperties) {
   return (
-    <div class="h-52 w-full">
+    <div class="min-h-0 w-full flex-1">
       <ParentSize>
         {({ width, height }) =>
           width > 0 ? <ChartContent hourly={hourly} width={width} height={height} /> : null

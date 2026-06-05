@@ -23,38 +23,30 @@ function formatHour(isoTime: string): string {
 
 export function ForecastPanel({ hourly }: ForecastPanelProperties) {
   return (
-    <section class="flex h-full flex-col gap-6 rounded-3xl bg-(--surface) p-8">
-      <h2 class="text-xl font-semibold tracking-widest text-(--text-muted) uppercase">
-        Next 5 hours
-      </h2>
-
-      <div class="flex flex-1 flex-col items-center justify-center">
-        {/* w-120 sizes both rows; the chart reads this width via ParentSize. */}
-        <div class="flex w-120 flex-col gap-8">
-          <div class="grid grid-cols-5 gap-2">
-            {hourly.map((entry) => (
-              <div key={entry.time} class="flex flex-col items-center gap-2 text-(--text)">
-                <span class="text-2xl font-medium text-(--text-muted)">
-                  {formatHour(entry.time)}
-                </span>
-                <div class="text-(--accent)">
-                  <WeatherIcon
-                    code={entry.weatherCode}
-                    isDay={readHour(entry.time) >= 6 && readHour(entry.time) < 19}
-                    size={54}
-                  />
-                </div>
-                <span class="text-4xl font-bold">{Math.round(entry.temperature)}°</span>
-                <span class="inline-flex items-center gap-1.5 text-xl text-(--text-muted)">
-                  <Droplet size={22} />
-                  {entry.precipitationProbability}%
-                </span>
+    <section class="flex h-full flex-col rounded-3xl bg-(--surface) p-8 backdrop-blur-xl">
+      {/* w-120 sizes both rows; the chart reads this width via ParentSize. */}
+      <div class="mx-auto flex h-full w-120 flex-col">
+        <div class="grid grid-cols-5 gap-2">
+          {hourly.map((entry) => (
+            <div key={entry.time} class="flex flex-col items-center gap-2 text-(--text)">
+              <span class="text-2xl font-medium text-(--text-muted)">{formatHour(entry.time)}</span>
+              <div class="text-(--accent)">
+                <WeatherIcon
+                  code={entry.weatherCode}
+                  isDay={readHour(entry.time) >= 6 && readHour(entry.time) < 19}
+                  size={54}
+                />
               </div>
-            ))}
-          </div>
-
-          <ForecastChart hourly={hourly} />
+              <span class="text-4xl font-bold">{Math.round(entry.temperature)}°</span>
+              <span class="inline-flex items-center gap-1.5 text-xl text-(--text-muted)">
+                <Droplet size={22} />
+                {entry.precipitationProbability}%
+              </span>
+            </div>
+          ))}
         </div>
+
+        <ForecastChart hourly={hourly} />
       </div>
     </section>
   )

@@ -19,7 +19,7 @@ type StatTileProperties = {
 
 function StatTile({ icon, value, label }: StatTileProperties) {
   return (
-    <div class="flex flex-col gap-1.5 rounded-2xl bg-(--surface) p-4">
+    <div class="flex flex-col gap-1.5 rounded-2xl bg-(--surface) p-4 backdrop-blur-xl">
       <span class="text-(--accent)">{icon}</span>
       <span class="text-3xl font-bold text-(--text)">{value}</span>
       <span class="text-base font-medium tracking-wide text-(--text-muted) uppercase">{label}</span>
@@ -35,19 +35,22 @@ export function CurrentConditions({
   const description = describeWeatherCode(current.weatherCode)
 
   return (
-    <section class="flex h-full flex-col justify-center gap-6">
-      <div class="text-(--accent)">
-        <WeatherIcon code={current.weatherCode} isDay={current.isDay} size={120} />
-      </div>
+    <section class="flex h-full flex-col justify-between">
+      <div class="flex flex-col gap-6">
+        <div class="flex items-center gap-4">
+          <span class="text-(--accent)">
+            <WeatherIcon code={current.weatherCode} isDay={current.isDay} size={120} />
+          </span>
+          <span class="text-5xl font-medium text-(--text)">{description.label}</span>
+        </div>
 
-      <div class="flex items-start text-(--text)">
-        <span class="text-[11rem] leading-none font-semibold">
-          {Math.round(current.temperature)}
-        </span>
-        <span class="mt-5 text-7xl font-light text-(--text-muted)">{temperatureUnit}</span>
+        <div class="flex items-start text-(--text)">
+          <span class="text-[11rem] leading-none font-semibold">
+            {Math.round(current.temperature)}
+          </span>
+          <span class="mt-5 text-7xl font-light text-(--text-muted)">{temperatureUnit}</span>
+        </div>
       </div>
-
-      <p class="text-5xl font-medium text-(--text)">{description.label}</p>
 
       <div class="grid grid-cols-3 gap-4">
         <StatTile

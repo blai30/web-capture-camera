@@ -17,8 +17,9 @@
     --text: #f8fafc;
     --text-muted: rgba(241, 245, 249, 0.86);
     /* Dark smoked-glass surface (flat, borderless) so cards/tiles back their
-       text with enough contrast even over bright condition backdrops. */
-    --surface: rgba(2, 6, 23, 0.3);
+       text with enough contrast even over bright condition backdrops. Lighter
+       tint paired with backdrop-blur on the consuming widgets for a frosted look. */
+    --surface: rgba(2, 6, 23, 0.22);
   }
 }
 
