@@ -47,7 +47,9 @@ export function createCapturer(options: CapturerOptions) {
 
   async function captureFrame() {
     if (!page) throw new Error('page renderer not started')
-    latestFrame = await page.screenshot({ type: 'png' })
+    // JPEG is required by ONVIF spec for GetSnapshotUri responses (not PNG).
+    // Capture as JPEG for both the snapshot endpoint and H.264 stream to keep the pipeline simple.
+    latestFrame = await page.screenshot({ type: 'jpeg', quality: 90 })
     return latestFrame
   }
 

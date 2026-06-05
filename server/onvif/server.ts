@@ -17,8 +17,8 @@ export function createOnvifServer(
 ) {
   const serverPort = options?.port ?? onvifConfig.port
 
-  // This handler is the final fallback in node-soap's request-listener chain: soap.listen()
-  // intercepts the two SOAP paths and delegates everything else here.
+  // This handler is the final fallback in node-soap's request-listener chain:
+  // soap.listen() intercepts the two SOAP paths and delegates everything else here.
   const httpServer = http.createServer(
     (request: http.IncomingMessage, response: http.ServerResponse) => {
       const pathname = (request.url ?? '').split('?')[0]
@@ -101,8 +101,9 @@ function serveSnapshot(response: http.ServerResponse, frame: Uint8Array<ArrayBuf
     response.end('No frame available yet')
     return
   }
+  // JPEG is mandated by ONVIF spec for GetSnapshotUri responses; required by UniFi Protect.
   response.writeHead(200, {
-    'Content-Type': 'image/png',
+    'Content-Type': 'image/jpeg',
     'Content-Length': frame.length,
   })
   response.end(frame)

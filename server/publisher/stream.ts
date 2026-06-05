@@ -20,10 +20,13 @@ export function createStream(options: StreamOptions) {
     console.log(`[Stream] Spawning ffmpeg, target: ${options.rtspUrl}`)
     // oxfmt-ignore
     ffmpeg = spawn('ffmpeg', [
-      // Input: PNG frames via stdin at 1 fps
+      // Input: JPEG frames via stdin at 1 fps.
+      // We use JPEG codec (mjpeg) here to match the snapshot format;
+      // this keeps the pipeline simple even though H.264 stream encoding could accept other formats.
+      // JPEG is required by ONVIF spec for snapshots.
       '-f', 'image2pipe',
       '-loop', '1',
-      '-c:v', 'png',
+      '-c:v', 'mjpeg',
       '-framerate', '1',
       '-i', 'pipe:0',
       // Video filter pixel format

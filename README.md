@@ -84,10 +84,10 @@ work on the LAN. Services exposed on the Pi:
 ```bash
 curl -sI http://<pi-ip>:8080/                            # dashboard → 200
 ffprobe -rtsp_transport tcp rtsp://<pi-ip>:554/weather   # H.264 720p stream
-curl -s http://<pi-ip>:8020/onvif/snapshot -o snap.png   # latest frame (PNG)
+curl -s http://<pi-ip>:8020/onvif/snapshot -o snap.jpg   # latest frame (JPEG)
 ```
 
-Then add the camera in Unifi Protect via ONVIF discovery, it appears as **Weather Dash**.
+Then add the camera in Unifi Protect via ONVIF discovery, it appears as **ViteCam Forecast**.
 
 **Updating:** `git pull && docker compose build && docker compose up -d`.
 
@@ -101,6 +101,16 @@ If you're integrating with Unifi Protect viewports, note the following:
 - **Multi view:** The viewport uses `sub_stream` for multi-camera views.
 - **Why web UI worked:** The Unifi web UI always uses `main_stream`, so it didn't exhibit the multi-view issue.
 - **Solution:** Make sure to include the lowQuality profile in onvif.yaml to enable sub_stream.
+
+## Snapshots & Thumbnails
+
+UniFi Protect displays device thumbnails in the camera list and hover previews by fetching the ONVIF snapshot via `GetSnapshotUri`. This application serves snapshots as **JPEG** (not PNG), as mandated by the [ONVIF Media Service specification (5.16.1)](https://www.onvif.org/specs/srv/media/ONVIF-Media-Service-Spec.pdf#page=50). The same JPEG frame is fed to both the snapshot HTTP endpoint (`/onvif/snapshot`) and the H.264 RTSP encoder for simplicity — this keeps the pipeline straightforward while satisfying the spec requirement.
+
+Without proper JPEG snapshot support, UniFi Protect will show a black tile and no hover preview for the camera. If thumbnails don't appear after adding the camera to Protect, ensure:
+
+1. The ONVIF port (default `8020`) is reachable from your Protect controller
+2. The camera is fully adopted and ONVIF services have finished loading (may take a minute or two)
+3. The snapshot endpoint returns a valid JPEG: `curl -sI http://<device-ip>:8020/onvif/snapshot` should show `Content-Type: image/jpeg`
 
 ## Weather Data
 
