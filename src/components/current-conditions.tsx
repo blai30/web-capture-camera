@@ -41,7 +41,7 @@ export function CurrentConditions({
       </div>
 
       <div class="flex items-start text-(--text)">
-        <span class="text-[11rem] leading-none font-bold tracking-tighter">
+        <span class="text-[11rem] leading-none font-semibold">
           {Math.round(current.temperature)}
         </span>
         <span class="mt-5 text-7xl font-light text-(--text-muted)">{temperatureUnit}</span>
