@@ -1,6 +1,9 @@
 import dgram from 'dgram'
 
+import { createLogger } from '../log'
 import type { OnvifDevice } from './device'
+
+const logger = createLogger('ws-discovery')
 
 const MULTICAST_GROUP = '239.255.255.250'
 const DISCOVERY_PORT = 3702
@@ -15,7 +18,7 @@ export function createWsDiscovery(device: OnvifDevice) {
       } catch {
         /* ignore membership errors */
       }
-      console.log(`[WS-Discovery] Listening on port ${DISCOVERY_PORT}`)
+      logger.info(`Listening on port ${DISCOVERY_PORT}`)
     })
 
     socket.on('message', (message: Buffer, remoteInfo: dgram.RemoteInfo) => {
@@ -35,7 +38,7 @@ export function createWsDiscovery(device: OnvifDevice) {
     })
 
     socket.on('error', (error: Error) => {
-      console.error('[WS-Discovery] Error:', error.message)
+      logger.error(`Error: ${error.message}`)
     })
   }
 

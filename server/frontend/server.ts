@@ -3,6 +3,10 @@ import path from 'path'
 
 import sirv from 'sirv'
 
+import { createLogger } from '../log'
+
+const logger = createLogger('frontend')
+
 // The dashboard SPA is a static build (dist/). It is loaded internally by the Puppeteer capturer and
 // can also be opened by other LAN clients, so the server binds all interfaces rather than loopback.
 const BIND_ADDRESS = '0.0.0.0'
@@ -25,7 +29,7 @@ export function createFrontendServer(options?: FrontendServerOptions) {
   const serveAssets = sirv(root, {
     single: true,
     etag: true,
-    dev: process.env.NODE_ENV !== 'production',
+    dev: process.env.NODE_ENV === 'development',
   })
 
   const httpServer = http.createServer((request, response) => serveAssets(request, response))
@@ -34,7 +38,7 @@ export function createFrontendServer(options?: FrontendServerOptions) {
     return new Promise<void>((resolve, reject) => {
       httpServer.on('error', reject)
       httpServer.listen(port, BIND_ADDRESS, () => {
-        console.log(`[Frontend] Serving ${root} on port ${port}`)
+        logger.info(`Serving ${root} on port ${port}`)
         resolve()
       })
     })

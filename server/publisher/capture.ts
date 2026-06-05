@@ -1,5 +1,9 @@
 import puppeteer, { type Browser, type Page } from 'puppeteer'
 
+import { createLogger } from '../log'
+
+const logger = createLogger('capture')
+
 const URL_READINESS_RETRIES = 30
 const URL_READINESS_DELAY_MS = 2000
 
@@ -26,23 +30,23 @@ export function createCapturer(options: CapturerOptions) {
   let latestFrame: Uint8Array<ArrayBufferLike> | null = null
 
   async function start() {
-    console.log('[Capture] Launching browser')
+    logger.info('Launching browser')
     browser = await puppeteer.launch({
       headless: true,
       executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
       args: CHROMIUM_LAUNCH_ARGS,
     })
-    console.log('[Capture] Browser launched, opening page')
+    logger.debug('Browser launched, opening page')
 
     page = await browser.newPage()
     await page.setViewport(options.viewport)
     await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'dark' }])
 
-    console.log(`[Capture] Waiting for ${options.url}`)
+    logger.info(`Waiting for ${options.url}`)
     await waitForUrl(options.url)
-    console.log(`[Capture] URL ready, navigating`)
+    logger.debug(`URL ready, navigating`)
     await page.goto(options.url, { waitUntil: 'networkidle2' })
-    console.log('[Capture] Page loaded')
+    logger.info('Page loaded')
   }
 
   async function captureFrame() {
@@ -72,7 +76,7 @@ async function waitForUrl(url: string) {
       await fetch(url)
       return
     } catch {
-      console.log(`Waiting for ${url}... attempt ${attempt}/${URL_READINESS_RETRIES}`)
+      logger.debug(`Waiting for ${url}... attempt ${attempt}/${URL_READINESS_RETRIES}`)
       await new Promise((resolve) => setTimeout(resolve, URL_READINESS_DELAY_MS))
     }
   }

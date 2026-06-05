@@ -1,5 +1,6 @@
 import 'dotenv/config'
 import { createFrontendServer } from './frontend/server'
+import { createLogger } from './log'
 import { rtspConfig } from './onvif/config'
 import { createOnvifDevice } from './onvif/device'
 import { createWsDiscovery } from './onvif/discovery'
@@ -12,6 +13,8 @@ import { createRtspServer } from './rtsp/server'
 // localhost may resolve to ::1 IPv6 which causes ffmpeg to fail to connect
 const RTSP_URL = `rtsp://127.0.0.1:${rtspConfig.port}${rtspConfig.path}`
 const CAPTURE_INTERVAL_MS = 600_000
+
+const logger = createLogger('main')
 
 async function main() {
   await using rtsp = createRtspServer()
@@ -51,4 +54,4 @@ async function main() {
   await new Promise((resolve) => controller.signal.addEventListener('abort', resolve))
 }
 
-main().catch(console.error)
+main().catch((error) => logger.error(error))
