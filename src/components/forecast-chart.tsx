@@ -13,6 +13,7 @@ type ForecastChartProperties = {
 }
 
 const VERTICAL_PADDING = 18
+const TEMPERATURE_TICK_COUNT = 4
 const AREA_GRADIENT_ID = 'forecast-area-gradient'
 
 type ChartPoint = {
@@ -43,6 +44,7 @@ export function ForecastChart({ hourly, width, height }: ForecastChartProperties
     x: horizontalScale(index) ?? 0,
     y: verticalScale(entry.temperature),
   }))
+  const temperatureTicks = verticalScale.ticks(TEMPERATURE_TICK_COUNT)
 
   return (
     <svg width={width} height={height} class="overflow-visible">
@@ -62,6 +64,49 @@ export function ForecastChart({ hourly, width, height }: ForecastChartProperties
           curve={curveNatural}
           fill={`url(#${AREA_GRADIENT_ID})`}
         />
+
+        {/* Vertical guides under each hour, tying the chart back to the cards above. */}
+        {points.map((point) => (
+          <line
+            key={point.x}
+            x1={point.x}
+            x2={point.x}
+            y1={VERTICAL_PADDING}
+            y2={height - VERTICAL_PADDING}
+            stroke="var(--text)"
+            stroke-opacity={0.08}
+            strokeWidth={1}
+          />
+        ))}
+
+        {/* Horizontal temperature reference lines with labels in the empty left margin. */}
+        {temperatureTicks.map((tick) => {
+          const y = verticalScale(tick)
+          return (
+            <g key={tick}>
+              <line
+                x1={0}
+                x2={width}
+                y1={y}
+                y2={y}
+                stroke="var(--text)"
+                stroke-opacity={0.16}
+                strokeWidth={1}
+              />
+              <text
+                x={2}
+                y={y - 6}
+                class="font-mono"
+                fontSize={15}
+                fill="var(--text)"
+                fill-opacity={0.55}
+              >
+                {tick}°
+              </text>
+            </g>
+          )
+        })}
+
         <LinePath
           data={points}
           x={(point) => point.x}

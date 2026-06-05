@@ -19,7 +19,7 @@ type StatTileProperties = {
 
 function StatTile({ icon, value, label }: StatTileProperties) {
   return (
-    <div class="flex flex-col gap-1.5 rounded-2xl border border-(--surface-border) bg-(--surface) p-4">
+    <div class="flex flex-col gap-1.5 rounded-2xl bg-(--surface) p-4">
       <span class="text-(--accent)">{icon}</span>
       <span class="text-3xl font-bold text-(--text)">{value}</span>
       <span class="text-base font-medium tracking-wide text-(--text-muted) uppercase">{label}</span>

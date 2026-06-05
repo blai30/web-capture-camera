@@ -10,8 +10,7 @@ export type Palette = Record<`--${string}`, string>
 const SHARED = {
   '--text': '#f8fafc',
   '--text-muted': 'rgba(241, 245, 249, 0.74)',
-  '--surface': 'rgba(255, 255, 255, 0.10)',
-  '--surface-border': 'rgba(255, 255, 255, 0.18)',
+  '--surface': 'rgba(255, 255, 255, 0.06)',
 }
 
 function makePalette(backgroundFrom: string, backgroundTo: string, accent: string): Palette {

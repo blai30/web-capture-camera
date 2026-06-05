@@ -26,7 +26,7 @@ function formatHour(isoTime: string): string {
 
 export function ForecastPanel({ hourly }: ForecastPanelProperties) {
   return (
-    <section class="flex h-full flex-col gap-6 rounded-3xl border border-(--surface-border) bg-(--surface) p-8">
+    <section class="flex h-full flex-col gap-6 rounded-3xl bg-(--surface) p-8">
       <h2 class="text-xl font-semibold tracking-widest text-(--text-muted) uppercase">
         Next 5 hours
       </h2>

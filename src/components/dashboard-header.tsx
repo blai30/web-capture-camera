@@ -24,12 +24,12 @@ export function DashboardHeader({ locationName, updatedAt }: DashboardHeaderProp
     <header class="flex items-center justify-between text-(--text)">
       <div class="flex items-center gap-4">
         <MapPin size={36} strokeWidth={2.25} />
-        <span class="text-4xl font-semibold tracking-tight">{locationName}</span>
+        <span class="text-4xl font-medium">{locationName}</span>
       </div>
       {updatedAt && (
         <div class="flex items-center gap-2.5 text-(--text-muted)">
           <RefreshCw size={30} strokeWidth={2.25} />
-          <span class="font-mono text-3xl">Updated {formatUpdatedTime(updatedAt)}</span>
+          <span class="text-2xl">Updated {formatUpdatedTime(updatedAt)}</span>
         </div>
       )}
     </header>
