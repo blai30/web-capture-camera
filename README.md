@@ -5,6 +5,16 @@ dashboard in headless Chromium, screenshots it on an interval, and encodes those
 H.264 RTSP stream fronted by an ONVIF SOAP server with WS-Discovery, so an NVR such as Unifi
 Protect auto-discovers it and shows the current forecast as if it were a real camera.
 
+## Dashboard
+
+The dashboard is condition-reactive: the backdrop texture, color palette, and accent shift with
+the current weather and time of day (powered by the Open-Meteo WMO weather code and `is_day`).
+
+|                                               |                                                   |
+| --------------------------------------------- | ------------------------------------------------- |
+| ![Clear day](docs/screenshots/clear-day.webp) | ![Clear night](docs/screenshots/clear-night.webp) |
+| ![Rain](docs/screenshots/rain.webp)           | ![Thunderstorm](docs/screenshots/thunder.webp)    |
+
 ## Development
 
 ### Prerequisites
