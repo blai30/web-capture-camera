@@ -16,11 +16,10 @@ export type FrontendServerOptions = {
 
 export function createFrontendServer(options?: FrontendServerOptions) {
   const port = options?.port ?? parseInt(process.env.APP_PORT ?? String(DEFAULT_PORT), 10)
-  const root = path.resolve(options?.root ?? process.env.STATIC_ROOT ?? path.resolve(process.cwd(), 'dist'))
-
-  // The in-container address the Puppeteer capturer should navigate to. 127.0.0.1 (not localhost)
-  // for the same IPv4-binding reason documented in index.ts.
-  const url = `http://127.0.0.1:${port}/`
+  const root = path.resolve(
+    options?.root ?? process.env.STATIC_ROOT ?? path.resolve(process.cwd(), 'dist')
+  )
+  const url = `http://localhost:${port}/`
 
   // sirv (the static server vite preview is built on) handles content types, etags, range requests,
   // and traversal safety. `single` falls back to index.html so client-side routing works. In

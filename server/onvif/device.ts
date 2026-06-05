@@ -42,128 +42,133 @@ export function createOnvifDevice() {
 
   const urn = `urn:uuid:${onvifConfig.uuid}`
 
-  function probeMatchXml(relatesTo: string): string {
-    const messageId = `uuid:${generateMessageUuid()}`
-    const instanceId = Math.floor(Math.random() * 2147483647)
-    const deviceXaddr = services[0].xaddr
-    return (
-      `<?xml version="1.0" encoding="UTF-8"?>` +
-      `<e:Envelope xmlns:e="http://www.w3.org/2003/05/soap-envelope"` +
-      ` xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing"` +
-      ` xmlns:d="http://schemas.xmlsoap.org/ws/2005/04/discovery"` +
-      ` xmlns:dn="http://www.onvif.org/ver10/network/wsdl">` +
-      `<e:Header>` +
-      `<wsa:MessageID>${messageId}</wsa:MessageID>` +
-      `<wsa:RelatesTo>${relatesTo}</wsa:RelatesTo>` +
-      `<wsa:To e:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:To>` +
-      `<wsa:Action e:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2005/04/discovery/ProbeMatches</wsa:Action>` +
-      `<d:AppSequence e:mustUnderstand="true" MessageNumber="0" InstanceId="${instanceId}"/>` +
-      `</e:Header>` +
-      `<e:Body>` +
-      `<d:ProbeMatches>` +
-      `<d:ProbeMatch>` +
-      `<wsa:EndpointReference>` +
-      `<wsa:Address>${urn}</wsa:Address>` +
-      `</wsa:EndpointReference>` +
-      `<d:Types>dn:NetworkVideoTransmitter</d:Types>` +
-      `<d:Scopes>${scopes.join(' ')}</d:Scopes>` +
-      `<d:XAddrs>${deviceXaddr}</d:XAddrs>` +
-      `<d:MetadataVersion>1</d:MetadataVersion>` +
-      `</d:ProbeMatch>` +
-      `</d:ProbeMatches>` +
-      `</e:Body>` +
-      `</e:Envelope>`
-    )
-  }
-
-  function getDeviceInformation() {
-    return {
-      Manufacturer: deviceConfig.manufacturer,
-      Model: deviceConfig.model,
-      FirmwareVersion: deviceConfig.firmwareVersion,
-      SerialNumber: deviceConfig.serialNumber,
-      HardwareId: deviceConfig.hardwareId,
-    }
-  }
-
-  function getCapabilities() {
-    return {
-      Capabilities: {
-        Device: {
-          Network: { IPFilter: true },
-          SystemCAPability: {
-            SupportedVersions: { Major: ONVIF_VERSION.major, Minor: ONVIF_VERSION.minor },
-          },
-        },
-        Media: {
-          Profile: true,
-          StreamingChains: true,
-        },
-        XT: {
-          RTP_TCP: true,
-        },
-      },
-    }
-  }
-
-  function getServicesResponse() {
-    return {
-      Services: services.map((service) => ({
-        Name: service.name,
-        Namespace: service.namespace,
-        XAddr: service.xaddr,
-        Version: { Major: service.version.major, Minor: service.version.minor },
-      })),
-    }
-  }
-
-  function getSystemDateAndTime() {
-    return {
-      DateTimeType: 'NTP',
-      DaylightSavings: false,
-      TimeZone: {
-        StdTime: { Hour: -6, Minute: 0 },
-        DaylightTime: { Hour: -1, Minute: 0 },
-      },
-      UTCTime: new Date().toISOString(),
-      LocalTime: new Date().toLocaleString(),
-    }
-  }
-
-  function getProfilesResponse() {
-    return {
-      Profiles: Object.values(profiles).map(buildOnvifProfile),
-    }
-  }
-
-  function getVideoSources() {
-    return {
-      VideoSources: [
-        {
-          Token: 'video_source_0',
-          Fixed: false,
-          FrameRateLimit: 30,
-          Resolution: { Width: 1280, Height: 720 },
-        },
-      ],
-    }
-  }
-
   return {
     urn,
     hostname: onvifConfig.hostname,
     port: onvifConfig.port,
     services,
     scopes,
-    probeMatchXml,
+    probeMatchXml: (relatesTo: string) =>
+      buildProbeMatchXml(services[0].xaddr, scopes, urn, relatesTo),
     getDeviceInformation,
     getCapabilities,
-    getServicesResponse,
+    getServicesResponse: () => buildServicesResponse(services),
     getSystemDateAndTime,
     getProfilesResponse,
     getVideoSources,
     streamUri: `rtsp://${onvifConfig.hostname}:${rtspConfig.port}${rtspConfig.path}`,
     snapshotUri: `http://${onvifConfig.hostname}:${onvifConfig.port}${SNAPSHOT_PATH}`,
+  }
+}
+
+function buildProbeMatchXml(
+  deviceXaddr: string,
+  scopes: string[],
+  urn: string,
+  relatesTo: string
+): string {
+  const messageId = `uuid:${generateMessageUuid()}`
+  const instanceId = Math.floor(Math.random() * 2147483647)
+  return (
+    `<?xml version="1.0" encoding="UTF-8"?>` +
+    `<e:Envelope xmlns:e="http://www.w3.org/2003/05/soap-envelope"` +
+    ` xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing"` +
+    ` xmlns:d="http://schemas.xmlsoap.org/ws/2005/04/discovery"` +
+    ` xmlns:dn="http://www.onvif.org/ver10/network/wsdl">` +
+    `<e:Header>` +
+    `<wsa:MessageID>${messageId}</wsa:MessageID>` +
+    `<wsa:RelatesTo>${relatesTo}</wsa:RelatesTo>` +
+    `<wsa:To e:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:To>` +
+    `<wsa:Action e:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2005/04/discovery/ProbeMatches</wsa:Action>` +
+    `<d:AppSequence e:mustUnderstand="true" MessageNumber="0" InstanceId="${instanceId}"/>` +
+    `</e:Header>` +
+    `<e:Body>` +
+    `<d:ProbeMatches>` +
+    `<d:ProbeMatch>` +
+    `<wsa:EndpointReference>` +
+    `<wsa:Address>${urn}</wsa:Address>` +
+    `</wsa:EndpointReference>` +
+    `<d:Types>dn:NetworkVideoTransmitter</d:Types>` +
+    `<d:Scopes>${scopes.join(' ')}</d:Scopes>` +
+    `<d:XAddrs>${deviceXaddr}</d:XAddrs>` +
+    `<d:MetadataVersion>1</d:MetadataVersion>` +
+    `</d:ProbeMatch>` +
+    `</d:ProbeMatches>` +
+    `</e:Body>` +
+    `</e:Envelope>`
+  )
+}
+
+function getDeviceInformation() {
+  return {
+    Manufacturer: deviceConfig.manufacturer,
+    Model: deviceConfig.model,
+    FirmwareVersion: deviceConfig.firmwareVersion,
+    SerialNumber: deviceConfig.serialNumber,
+    HardwareId: deviceConfig.hardwareId,
+  }
+}
+
+function getCapabilities() {
+  return {
+    Capabilities: {
+      Device: {
+        Network: { IPFilter: true },
+        SystemCAPability: {
+          SupportedVersions: { Major: ONVIF_VERSION.major, Minor: ONVIF_VERSION.minor },
+        },
+      },
+      Media: {
+        Profile: true,
+        StreamingChains: true,
+      },
+      XT: {
+        RTP_TCP: true,
+      },
+    },
+  }
+}
+
+function buildServicesResponse(services: OnvifService[]) {
+  return {
+    Services: services.map((service) => ({
+      Name: service.name,
+      Namespace: service.namespace,
+      XAddr: service.xaddr,
+      Version: { Major: service.version.major, Minor: service.version.minor },
+    })),
+  }
+}
+
+function getSystemDateAndTime() {
+  return {
+    DateTimeType: 'NTP',
+    DaylightSavings: false,
+    TimeZone: {
+      StdTime: { Hour: -6, Minute: 0 },
+      DaylightTime: { Hour: -1, Minute: 0 },
+    },
+    UTCTime: new Date().toISOString(),
+    LocalTime: new Date().toLocaleString(),
+  }
+}
+
+function getProfilesResponse() {
+  return {
+    Profiles: Object.values(profiles).map(buildOnvifProfile),
+  }
+}
+
+function getVideoSources() {
+  return {
+    VideoSources: [
+      {
+        Token: 'video_source_0',
+        Fixed: false,
+        FrameRateLimit: 30,
+        Resolution: { Width: 1280, Height: 720 },
+      },
+    ],
   }
 }
 
