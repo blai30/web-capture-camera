@@ -22,14 +22,14 @@ function formatUpdatedTime(updatedAt: Date): string {
 export function DashboardHeader({ locationName, updatedAt }: DashboardHeaderProperties) {
   return (
     <header class="flex items-center justify-between text-(--text)">
-      <div class="flex items-center gap-3">
-        <MapPin size={40} strokeWidth={2.25} />
-        <span class="text-5xl font-semibold tracking-tight">{locationName}</span>
+      <div class="flex items-center gap-4">
+        <MapPin size={36} strokeWidth={2.25} />
+        <span class="text-4xl font-semibold tracking-tight">{locationName}</span>
       </div>
       {updatedAt && (
-        <div class="flex items-center gap-2 text-(--text-muted)">
-          <RefreshCw size={22} strokeWidth={2.25} />
-          <span class="font-mono text-xl">Updated {formatUpdatedTime(updatedAt)}</span>
+        <div class="flex items-center gap-2.5 text-(--text-muted)">
+          <RefreshCw size={30} strokeWidth={2.25} />
+          <span class="font-mono text-3xl">Updated {formatUpdatedTime(updatedAt)}</span>
         </div>
       )}
     </header>

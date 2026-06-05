@@ -1,4 +1,5 @@
 import { ArrowDown, ArrowUp, Droplets, Thermometer } from 'lucide-preact'
+import type { ComponentChildren } from 'preact'
 
 import { WeatherIcon } from '@/components/weather-icon'
 import { describeWeatherCode } from '@/lib/weather-codes'
@@ -10,6 +11,22 @@ type CurrentConditionsProperties = {
   temperatureUnit: string
 }
 
+type StatTileProperties = {
+  icon: ComponentChildren
+  value: ComponentChildren
+  label: string
+}
+
+function StatTile({ icon, value, label }: StatTileProperties) {
+  return (
+    <div class="flex flex-col gap-1.5 rounded-2xl border border-(--surface-border) bg-(--surface) p-4">
+      <span class="text-(--accent)">{icon}</span>
+      <span class="text-3xl font-bold text-(--text)">{value}</span>
+      <span class="text-base font-medium tracking-wide text-(--text-muted) uppercase">{label}</span>
+    </div>
+  )
+}
+
 export function CurrentConditions({
   current,
   daily,
@@ -18,35 +35,41 @@ export function CurrentConditions({
   const description = describeWeatherCode(current.weatherCode)
 
   return (
-    <section class="flex flex-col justify-center gap-5">
+    <section class="flex h-full flex-col justify-center gap-6">
       <div class="text-(--accent)">
-        <WeatherIcon code={current.weatherCode} isDay={current.isDay} size={132} />
+        <WeatherIcon code={current.weatherCode} isDay={current.isDay} size={120} />
       </div>
 
       <div class="flex items-start text-(--text)">
-        <span class="text-[10rem] leading-none font-bold tracking-tighter">
+        <span class="text-[11rem] leading-none font-bold tracking-tighter">
           {Math.round(current.temperature)}
         </span>
-        <span class="mt-4 text-6xl font-light text-(--text-muted)">{temperatureUnit}</span>
+        <span class="mt-5 text-7xl font-light text-(--text-muted)">{temperatureUnit}</span>
       </div>
 
-      <p class="text-4xl font-medium text-(--text)">{description.label}</p>
+      <p class="text-5xl font-medium text-(--text)">{description.label}</p>
 
-      <div class="flex flex-wrap items-center gap-x-8 gap-y-3 text-2xl text-(--text-muted)">
-        <span class="inline-flex items-center gap-2">
-          <Thermometer size={26} />
-          Feels {Math.round(current.apparentTemperature)}°
-        </span>
-        <span class="inline-flex items-center gap-2">
-          <ArrowUp size={26} />
-          {Math.round(daily.temperatureMax)}°
-          <ArrowDown size={26} class="ml-3" />
-          {Math.round(daily.temperatureMin)}°
-        </span>
-        <span class="inline-flex items-center gap-2">
-          <Droplets size={26} />
-          {current.precipitation.toFixed(2)}"
-        </span>
+      <div class="grid grid-cols-3 gap-4">
+        <StatTile
+          icon={<Thermometer size={32} />}
+          value={`${Math.round(current.apparentTemperature)}°`}
+          label="Feels like"
+        />
+        <StatTile
+          icon={
+            <span class="flex gap-1">
+              <ArrowUp size={32} />
+              <ArrowDown size={32} />
+            </span>
+          }
+          value={`${Math.round(daily.temperatureMax)}° / ${Math.round(daily.temperatureMin)}°`}
+          label="High / Low"
+        />
+        <StatTile
+          icon={<Droplets size={32} />}
+          value={`${current.precipitation.toFixed(2)}"`}
+          label="Precip"
+        />
       </div>
     </section>
   )

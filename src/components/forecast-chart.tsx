@@ -68,7 +68,7 @@ export function ForecastChart({ hourly, width, height }: ForecastChartProperties
           y={(point) => point.y}
           curve={curveNatural}
           stroke="var(--accent)"
-          strokeWidth={4}
+          strokeWidth={5}
           strokeLinecap="round"
         />
         {points.map((point) => (
@@ -76,10 +76,10 @@ export function ForecastChart({ hourly, width, height }: ForecastChartProperties
             key={point.x}
             cx={point.x}
             cy={point.y}
-            r={6}
+            r={8}
             fill="var(--accent)"
             stroke="var(--surface)"
-            strokeWidth={3}
+            strokeWidth={4}
           />
         ))}
       </Group>
