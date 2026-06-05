@@ -6,6 +6,7 @@ const logger = createLogger('capture')
 
 const URL_READINESS_RETRIES = 30
 const URL_READINESS_DELAY_MS = 2000
+const WAIT_BEFORE_FIRST_CAPTURE_MS = 10_000
 
 const CHROMIUM_LAUNCH_ARGS = [
   '--no-sandbox',
@@ -47,6 +48,9 @@ export function createCapturer(options: CapturerOptions) {
     logger.debug(`URL ready, navigating`)
     await page.goto(options.url, { waitUntil: 'networkidle2' })
     logger.info('Page loaded')
+    // Give the SPA a moment to finish any initial animations/data loads
+    logger.debug(`Waiting ${WAIT_BEFORE_FIRST_CAPTURE_MS}ms before first capture`)
+    await new Promise((resolve) => setTimeout(resolve, WAIT_BEFORE_FIRST_CAPTURE_MS))
   }
 
   async function captureFrame() {
