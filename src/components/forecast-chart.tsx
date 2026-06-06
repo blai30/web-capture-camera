@@ -4,6 +4,7 @@ import { Group } from '@visx/group'
 import { ParentSize } from '@visx/responsive'
 import { scaleLinear, scalePoint } from '@visx/scale'
 import { AreaClosed, LinePath } from '@visx/shape'
+import { useId } from 'preact/hooks'
 
 import type { HourlyForecast } from '@/lib/weather-types'
 
@@ -18,7 +19,6 @@ type ChartContentProperties = ForecastChartProperties & {
 
 const VERTICAL_PADDING = 18
 const TEMPERATURE_TICK_COUNT = 4
-const AREA_GRADIENT_ID = 'forecast-area-gradient'
 
 type ChartPoint = {
   x: number
@@ -26,6 +26,11 @@ type ChartPoint = {
 }
 
 function ChartContent({ hourly, width, height }: ChartContentProperties) {
+  // Unique per chart instance so multiple forecasts on one page (e.g. the dev
+  // preview gallery) don't collide on a shared SVG gradient id, which would make
+  // every area fill resolve to the first chart's accent.
+  const areaGradientId = useId()
+
   const temperatures = hourly.map((entry) => entry.temperature)
   const minimumTemperature = Math.min(...temperatures)
   const maximumTemperature = Math.max(...temperatures)
@@ -53,7 +58,7 @@ function ChartContent({ hourly, width, height }: ChartContentProperties) {
   return (
     <svg width={width} height={height} class="overflow-visible">
       <LinearGradient
-        id={AREA_GRADIENT_ID}
+        id={areaGradientId}
         from="var(--accent)"
         to="var(--accent)"
         fromOpacity={0.5}
@@ -66,7 +71,7 @@ function ChartContent({ hourly, width, height }: ChartContentProperties) {
           y={(point) => point.y}
           yScale={verticalScale}
           curve={curveNatural}
-          fill={`url(#${AREA_GRADIENT_ID})`}
+          fill={`url(#${areaGradientId})`}
         />
 
         {/* Vertical guides under each hour, tying the chart back to the cards above. */}
