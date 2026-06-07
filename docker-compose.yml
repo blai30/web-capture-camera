@@ -16,5 +16,5 @@ services:
     network_mode: host
     env_file:
       - .env
-    command: node server/index.ts
+    command: node src/index.ts
     restart: unless-stopped
