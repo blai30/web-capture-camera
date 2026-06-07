@@ -19,6 +19,8 @@ CAPTURE_URL ──▶ headless Chromium ──▶ JPEG screenshot ──▶ ffmp
 
 ## Example use-case: weather dashboard
 
+![image](docs/screenshots/example.png)
+
 The original use for this project was a "weather camera": a Preact dashboard showing a live condition-reactive forecast, served on a local port, captured and streamed as an ONVIF camera so a forecast tile appears alongside the real cameras in Unifi Protect. Any such page works: build (or host) the page yourself, serve it somewhere reachable, and set `CAPTURE_URL` to its address.
 
 Link to the repo: https://github.com/blai30/weather-forecast-dashboard
