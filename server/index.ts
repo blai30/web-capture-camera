@@ -13,10 +13,9 @@ import { createRtspServer } from './rtsp/server.ts'
 const RTSP_URL = `rtsp://127.0.0.1:${rtspConfig.port}${rtspConfig.path}`
 const CAPTURE_INTERVAL_MS = 600_000
 
-// The dashboard is the `vite build` static bundle served externally (a static host in production,
-// the Vite dev server during development) on APP_PORT. The capturer screenshots it from there.
-const DASHBOARD_PORT = parseInt(process.env.APP_PORT ?? '5173', 10)
-const DASHBOARD_URL = `http://localhost:${DASHBOARD_PORT}/`
+// The URL the capturer screenshots. Any web page served anywhere reachable from this process
+// (a static host, an app on the LAN, localhost) works; supply it via CAPTURE_URL.
+const CAPTURE_URL = process.env.CAPTURE_URL ?? 'http://localhost:8080/'
 
 const logger = createLogger('main')
 
@@ -27,7 +26,7 @@ async function main() {
   const device = createOnvifDevice()
 
   await using capturer = createCapturer({
-    url: DASHBOARD_URL,
+    url: CAPTURE_URL,
     viewport: { width: 1280, height: 720 },
   })
 

@@ -1,15 +1,13 @@
 # Host node_modules holds x64 binaries that would poison the arm64 image; reinstalled in-image.
 node_modules
-# dist is rebuilt in the build stage.
-dist
-dist-ssr
 
 .git
 .gitignore
 
-# Other env files are templates; .env is intentionally NOT ignored, the build stage needs it so
-# vite bakes VITE_* location values into dist.
+# Env is supplied at runtime via compose env_file, not baked into the image.
+.env
 .env.example
+.env.prod
 
 # Logs / editor / tooling noise, irrelevant to the build.
 logs

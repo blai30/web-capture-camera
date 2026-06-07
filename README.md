@@ -1,50 +1,76 @@
-# forecast-onvif
+# web-capture-camera
 
-A virtual ONVIF camera that streams a live weather dashboard to your NVR. It renders a Preact
-dashboard in headless Chromium, screenshots it on an interval, and encodes those frames into an
-H.264 RTSP stream fronted by an ONVIF SOAP server with WS-Discovery, so an NVR such as Unifi
-Protect auto-discovers it and shows the current forecast as if it were a real camera.
+A virtual ONVIF camera that turns **any web page into a camera feed** for your NVR. It renders a
+configurable URL in headless Chromium, screenshots it on an interval, and encodes those frames into
+an H.264 RTSP stream fronted by an ONVIF SOAP server with WS-Discovery, so an NVR such as Unifi
+Protect auto-discovers it and shows the page as if it were a real camera.
 
-## Dashboard
+Point it at a dashboard, a status board, a kiosk page, a live chart, a webcam-style web app —
+whatever renders in a browser. The page is just a URL (`CAPTURE_URL`); the camera does the rest.
 
-The dashboard is condition-reactive: the backdrop texture, color palette, and accent shift with
-the current weather and time of day (powered by the Open-Meteo WMO weather code and `is_day`).
+## How it works
 
-|                                               |                                                   |
-| --------------------------------------------- | ------------------------------------------------- |
-| ![Clear day](docs/screenshots/clear-day.webp) | ![Clear night](docs/screenshots/clear-night.webp) |
-| ![Rain](docs/screenshots/rain.webp)           | ![Thunderstorm](docs/screenshots/thunder.webp)    |
+```
+CAPTURE_URL ──▶ headless Chromium ──▶ JPEG screenshot ──▶ ffmpeg (H.264) ──▶ RTSP ──┐
+(any web page)   (puppeteer)          (on an interval)                              ├─▶ NVR
+                                                       └──▶ ONVIF snapshot (JPEG) ──┤
+                                          ONVIF SOAP + WS-Discovery ────────────────┘
+```
+
+- **Capture** (`server/publisher/capture.ts`): puppeteer loads `CAPTURE_URL` and screenshots it.
+- **Stream** (`server/publisher/stream.ts` + `server/rtsp/`): frames are piped through ffmpeg into an H.264 RTSP stream.
+- **ONVIF** (`server/onvif/`): a SOAP device/media server plus WS-Discovery so NVRs auto-discover the camera; the latest frame is also served as a JPEG snapshot.
+
+## Example use-case: weather dashboard
+
+The original use for this project was a "weather camera": a Preact dashboard showing a live
+condition-reactive forecast, served on a local port, captured and streamed as an ONVIF camera so a
+forecast tile appears alongside the real cameras in Unifi Protect. Any such page works — build (or
+host) the page yourself, serve it somewhere reachable, and set `CAPTURE_URL` to its address.
+
+## Configuration
+
+All settings are environment variables (see `.env.example`):
+
+| Variable              | Default                  | Description                                         |
+| --------------------- | ------------------------ | --------------------------------------------------- |
+| `CAPTURE_URL`         | `http://localhost:8080/` | The web page the camera screenshots.                |
+| `RTSP_PORT`           | `554`                    | RTSP listen port.                                   |
+| `RTSP_PATH`           | `/stream`                | RTSP stream path.                                   |
+| `ONVIF_PORT`          | `8020`                   | ONVIF SOAP + snapshot port.                         |
+| `DEVICE_HOSTNAME`     | `localhost`              | LAN IP advertised in every ONVIF/RTSP/snapshot URL. |
+| `DEVICE_MAC`          | —                        | Advertised MAC address.                             |
+| `DEVICE_UUID`         | —                        | Advertised device UUID.                             |
+| `DEVICE_MANUFACTURER` | `WebCapture`             | Advertised manufacturer.                            |
+| `DEVICE_MODEL`        | `Camera`                 | Advertised model.                                   |
 
 ## Development
 
 ### Prerequisites
 
-- Node.js 24+
+- Node.js 24+ (runs TypeScript directly via native type stripping; no build step)
 - pnpm
-- Docker & Docker Compose
+- `ffmpeg` on your `PATH`
+- Chromium/Chrome (puppeteer downloads one on install for desktop platforms)
 
-### Local Development
-
-The dashboard frontend and the capture/streaming server run as two processes:
+### Run locally
 
 ```bash
-# Install dependencies
 pnpm install
 
-# Terminal 1: frontend dev server (http://localhost:5173)
-pnpm dev
-
-# Terminal 2: ONVIF/RTSP/capture server (optional; needs ffmpeg on PATH)
-pnpm dev:server
+# Serve something at CAPTURE_URL (any web page), then:
+pnpm dev      # ONVIF/RTSP/capture server with --watch
 ```
 
-`pnpm dev` alone renders the Preact dashboard at `http://localhost:5173` for UI work. To exercise the full camera pipeline locally, also run `pnpm dev:server`; the capturer points at `http://localhost:${APP_PORT}/` (default `5173`), so the dashboard must be served there, `pnpm dev` does this during development. The server spawns `ffmpeg`, so it must be on your `PATH`.
+The capturer waits for `CAPTURE_URL` to become reachable before it starts streaming.
 
 ## Production Deployment (Raspberry Pi 5)
 
-The app is packaged as a Docker image for `linux/arm64` (Raspberry Pi 4/5) via `Dockerfile` + `docker-compose.yml`. The image bundles system Chromium and ffmpeg. Compose runs two services from that one image: `dashboard` serves the built SPA on `APP_PORT` via `vite preview`, and `camera` screenshots it and serves the RTSP + ONVIF stream.
+Packaged as a Docker image for `linux/arm64` (Raspberry Pi 4/5) via `Dockerfile` +
+`docker-compose.yml`. The image bundles system Chromium and ffmpeg.
 
-**Build it natively on the Pi:** emulated cross-builds from an x86 machine are slow and unreliable (Chromium especially).
+**Build it natively on the Pi:** emulated cross-builds from an x86 machine are slow and unreliable
+(Chromium especially).
 
 **1. Install Docker on Raspberry Pi OS (64-bit):**
 
@@ -56,19 +82,17 @@ sudo usermod -aG docker $USER   # then log out / back in
 **2. Get the code and configure `.env`:**
 
 ```bash
-git clone <repo-url> forecast-onvif && cd forecast-onvif
+git clone <repo-url> web-capture-camera && cd web-capture-camera
 cp .env.example .env
 ```
 
 Edit `.env` and set at least:
 
-- `DEVICE_HOSTNAME`: the Pi's LAN IP (e.g. `192.168.0.32`). Every advertised ONVIF/RTSP/snapshot URL
-  is built from this, so it must be reachable by your NVR. Reserve a DHCP lease so it stays stable.
-- `NODE_ENV=production`
-- `VITE_WEATHER_LAT` / `VITE_WEATHER_LON` / `VITE_WEATHER_NAME` / `VITE_TIMEZONE`: your location.
-  These are **baked into the build**, so changing location later requires a rebuild.
-- Optional: `APP_PORT` (dashboard, default `8080`), `RTSP_PORT` (default `554`), `ONVIF_PORT`
-  (default `8020`), and the `DEVICE_*` identity fields.
+- `CAPTURE_URL`: the page to stream. If it points at `localhost`, that page must be served in the
+  same host network namespace (host networking is used).
+- `DEVICE_HOSTNAME`: the Pi's LAN IP (e.g. `192.168.0.32`). Every advertised ONVIF/RTSP/snapshot
+  URL is built from this, so it must be reachable by your NVR. Reserve a DHCP lease so it stays stable.
+- Optional: `RTSP_PORT` (default `554`), `ONVIF_PORT` (default `8020`), and the `DEVICE_*` identity fields.
 
 **3. Build and run:**
 
@@ -78,48 +102,46 @@ docker compose up -d
 docker compose logs -f
 ```
 
-Both services use host networking, required so ONVIF WS-Discovery multicast and the advertised URLs work on the LAN (it also lets `camera` reach `dashboard` at `localhost:${APP_PORT}`). Services exposed on the Pi:
+The `camera` service uses host networking, required so ONVIF WS-Discovery multicast and the
+advertised URLs work on the LAN. Services exposed on the Pi:
 
-| Port                | Service                                                                   |
-| ------------------- | ------------------------------------------------------------------------- |
-| `8080` (`APP_PORT`) | Weather dashboard SPA: also a handy debug view of what the camera renders |
-| `554`               | RTSP stream: `rtsp://<pi-ip>:554/weather`                                 |
-| `8020`              | ONVIF SOAP + snapshot (`/onvif/snapshot`)                                 |
-| `3702/udp`          | WS-Discovery (device auto-discovery)                                      |
+| Port       | Service                                   |
+| ---------- | ----------------------------------------- |
+| `554`      | RTSP stream: `rtsp://<pi-ip>:554/stream`  |
+| `8020`     | ONVIF SOAP + snapshot (`/onvif/snapshot`) |
+| `3702/udp` | WS-Discovery (device auto-discovery)      |
 
 **4. Verify** (from another host on the same subnet):
 
 ```bash
-curl -sI http://<pi-ip>:8080/                            # dashboard → 200
-ffprobe -rtsp_transport tcp rtsp://<pi-ip>:554/weather   # H.264 720p stream
-curl -s http://<pi-ip>:8020/onvif/snapshot -o snap.jpg   # latest frame (JPEG)
+ffprobe -rtsp_transport tcp rtsp://<pi-ip>:554/stream   # H.264 720p stream
+curl -s http://<pi-ip>:8020/onvif/snapshot -o snap.jpg  # latest frame (JPEG)
 ```
 
-Then add the camera in Unifi Protect via ONVIF discovery, it appears as **ViteCam Forecast**.
+Then add the camera in Unifi Protect via ONVIF discovery; it appears as **WebCapture Camera**.
 
 **Updating:** `git pull && docker compose build && docker compose up -d`.
 
-## Unifi Protect Viewport
+## Unifi Protect viewports
 
 If you're integrating with Unifi Protect viewports, note the following:
 
 - **Streams:** Every camera exposes a `main_stream` and a `sub_stream`.
-- **Root cause:** The ONVIF stream didn't include a low-quality `sub_stream`, which caused multi-view problems.
-- **Single view:** `main_stream` is used for full-quality display (e.g., when showing a single camera).
-- **Multi view:** The viewport uses `sub_stream` for multi-camera views.
-- **Why web UI worked:** The Unifi web UI always uses `main_stream`, so it didn't exhibit the multi-view issue.
-- **Solution:** Make sure to include the lowQuality profile in onvif.yaml to enable sub_stream.
+- **Single view:** `main_stream` is used for full-quality display (e.g., a single camera).
+- **Multi view:** The viewport uses `sub_stream` for multi-camera views; omitting the low-quality
+  `sub_stream` profile causes multi-view problems (the web UI always uses `main_stream`, so it's unaffected).
 
-## Snapshots & Thumbnails
+## Snapshots & thumbnails
 
-UniFi Protect displays device thumbnails in the camera list and hover previews by fetching the ONVIF snapshot via `GetSnapshotUri`. This application serves snapshots as **JPEG** (not PNG), as mandated by the [ONVIF Media Service specification (5.16.1)](https://www.onvif.org/specs/srv/media/ONVIF-Media-Service-Spec.pdf#page=50). The same JPEG frame is fed to both the snapshot HTTP endpoint (`/onvif/snapshot`) and the H.264 RTSP encoder for simplicity, this keeps the pipeline straightforward while satisfying the spec requirement.
+UniFi Protect displays device thumbnails and hover previews by fetching the ONVIF snapshot via
+`GetSnapshotUri`. This app serves snapshots as **JPEG** (not PNG), as mandated by the
+[ONVIF Media Service specification (5.16.1)](https://www.onvif.org/specs/srv/media/ONVIF-Media-Service-Spec.pdf#page=50).
+The same JPEG frame feeds both the snapshot HTTP endpoint (`/onvif/snapshot`) and the H.264 RTSP
+encoder, keeping the pipeline straightforward while satisfying the spec.
 
-Without proper JPEG snapshot support, UniFi Protect will show a black tile and no hover preview for the camera. If thumbnails don't appear after adding the camera to Protect, ensure:
+Without valid JPEG snapshots, UniFi Protect shows a black tile and no hover preview. If thumbnails
+don't appear after adding the camera to Protect, ensure:
 
-1. The ONVIF port (default `8020`) is reachable from your Protect controller
-2. The camera is fully adopted and ONVIF services have finished loading (may take a minute or two)
-3. The snapshot endpoint returns a valid JPEG: `curl -sI http://<device-ip>:8020/onvif/snapshot` should show `Content-Type: image/jpeg`
-
-## Weather Data
-
-Powered by [Open-Meteo](https://open-meteo.com/) - free, no API key required. Data refreshes every 10 minutes.
+1. The ONVIF port (default `8020`) is reachable from your Protect controller.
+2. The camera is fully adopted and ONVIF services have finished loading (may take a minute or two).
+3. The snapshot endpoint returns a valid JPEG: `curl -sI http://<device-ip>:8020/onvif/snapshot` should show `Content-Type: image/jpeg`.

@@ -1,6 +1,6 @@
 export const rtspConfig = {
   port: parseInt(process.env.RTSP_PORT ?? '554', 10),
-  path: process.env.RTSP_PATH ?? '/weather',
+  path: process.env.RTSP_PATH ?? '/stream',
 }
 
 export const onvifConfig = {
@@ -10,11 +10,11 @@ export const onvifConfig = {
 }
 
 export const deviceConfig = {
-  manufacturer: process.env.DEVICE_MANUFACTURER ?? 'ViteCam',
-  model: process.env.DEVICE_MODEL ?? 'Forecast',
+  manufacturer: process.env.DEVICE_MANUFACTURER ?? 'WebCapture',
+  model: process.env.DEVICE_MODEL ?? 'Camera',
   firmwareVersion: '2.0.0',
-  serialNumber: 'vitecam-forecast-0000',
-  hardwareId: 'vitecam-forecast-1001',
+  serialNumber: 'webcapture-camera-0000',
+  hardwareId: 'webcapture-camera-1001',
   macAddress: process.env.DEVICE_MAC ?? '2C:CF:67:F7:F2:49',
 }
 
