@@ -38,12 +38,11 @@ pnpm dev
 pnpm dev:server
 ```
 
-`pnpm dev` alone renders the Preact dashboard at `http://localhost:5173` for UI work. To exercise the full camera pipeline locally, also run `pnpm dev:server` and set `APP_URL=http://localhost:5173` in `.env` so the capturer points at the Vite dev server, otherwise the server serves the built SPA on `APP_PORT` (default `8080`). The server spawns `ffmpeg`, so it must be on your `PATH`.
+`pnpm dev` alone renders the Preact dashboard at `http://localhost:5173` for UI work. To exercise the full camera pipeline locally, also run `pnpm dev:server`; the capturer points at `http://localhost:${APP_PORT}/` (default `5173`), so the dashboard must be served there, `pnpm dev` does this during development. The server spawns `ffmpeg`, so it must be on your `PATH`.
 
 ## Production Deployment (Raspberry Pi 5)
 
-The app is packaged as a Docker image for `linux/arm64` (Raspberry Pi 4/5) via `Dockerfile` +
-`docker-compose.yml`. The image bundles system Chromium and ffmpeg.
+The app is packaged as a Docker image for `linux/arm64` (Raspberry Pi 4/5) via `Dockerfile` + `docker-compose.yml`. The image bundles system Chromium and ffmpeg. Compose runs two services from that one image: `dashboard` serves the built SPA on `APP_PORT` via `vite preview`, and `camera` screenshots it and serves the RTSP + ONVIF stream.
 
 **Build it natively on the Pi:** emulated cross-builds from an x86 machine are slow and unreliable (Chromium especially).
 
@@ -79,8 +78,7 @@ docker compose up -d
 docker compose logs -f
 ```
 
-The container uses host networking, required so ONVIF WS-Discovery multicast and the advertised URLs
-work on the LAN. Services exposed on the Pi:
+Both services use host networking, required so ONVIF WS-Discovery multicast and the advertised URLs work on the LAN (it also lets `camera` reach `dashboard` at `localhost:${APP_PORT}`). Services exposed on the Pi:
 
 | Port                | Service                                                                   |
 | ------------------- | ------------------------------------------------------------------------- |

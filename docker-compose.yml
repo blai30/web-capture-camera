@@ -1,17 +1,34 @@
 services:
-  forecast-onvif:
+  # Serves the `vite build` output (dist/) on APP_PORT via `vite preview`. The camera service
+  # screenshots it; it is also reachable on the LAN as a debug view of what the camera renders.
+  dashboard:
     build: .
     image: forecast-onvif:latest
-    container_name: forecast-onvif
+    container_name: forecast-onvif-dashboard
+    network_mode: host
+    env_file:
+      - .env
+    command: pnpm preview
+    restart: unless-stopped
+
+  # Renders the dashboard in headless Chromium, encodes frames to H.264, and serves them over
+  # RTSP + ONVIF with WS-Discovery. Reuses the image built by the dashboard service.
+  camera:
+    image: forecast-onvif:latest
+    container_name: forecast-onvif-camera
     # network_mode: host is REQUIRED, not optional:
     #  - WS-Discovery uses UDP multicast 239.255.255.250:3702; Docker's bridge network does not
     #    forward LAN multicast, so an NVR's Probe never reaches the container and discovery fails.
     #  - The ONVIF/RTSP URIs are advertised as DEVICE_HOSTNAME (the Pi's LAN IP); host networking
     #    lets clients reach them exactly as advertised (bridge NAT would break the return path).
-    #  - RTSP port 554 (<1024) and APP_PORT bind directly on the host.
-    # Ports exposed on the LAN: 554 (RTSP), 8020 (ONVIF SOAP + snapshot),
-    # 8080 (dashboard SPA / APP_PORT), 3702/udp (WS-Discovery).
+    #  - RTSP port 554 (<1024) binds directly on the host.
+    #  - The capturer reaches the dashboard at localhost:APP_PORT, served by the dashboard service
+    #    in the same (host) network namespace.
+    # Ports exposed on the LAN: 554 (RTSP), 8020 (ONVIF SOAP + snapshot), 3702/udp (WS-Discovery).
     network_mode: host
     env_file:
       - .env
+    command: node server/index.ts
+    depends_on:
+      - dashboard
     restart: unless-stopped

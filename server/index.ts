@@ -1,5 +1,4 @@
 import 'dotenv/config'
-import { createFrontendServer } from './frontend/server.ts'
 import { createLogger } from './log.ts'
 import { rtspConfig } from './onvif/config.ts'
 import { createOnvifDevice } from './onvif/device.ts'
@@ -14,6 +13,11 @@ import { createRtspServer } from './rtsp/server.ts'
 const RTSP_URL = `rtsp://127.0.0.1:${rtspConfig.port}${rtspConfig.path}`
 const CAPTURE_INTERVAL_MS = 600_000
 
+// The dashboard is the `vite build` static bundle served externally (a static host in production,
+// the Vite dev server during development) on APP_PORT. The capturer screenshots it from there.
+const DASHBOARD_PORT = parseInt(process.env.APP_PORT ?? '5173', 10)
+const DASHBOARD_URL = `http://localhost:${DASHBOARD_PORT}/`
+
 const logger = createLogger('main')
 
 async function main() {
@@ -22,11 +26,8 @@ async function main() {
 
   const device = createOnvifDevice()
 
-  await using frontend = createFrontendServer()
-  await frontend.start()
-
   await using capturer = createCapturer({
-    url: process.env.APP_URL ?? frontend.url,
+    url: DASHBOARD_URL,
     viewport: { width: 1280, height: 720 },
   })
 

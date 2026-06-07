@@ -32,14 +32,10 @@ ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
 RUN corepack enable
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-# --prod: Node strips types itself, so no build toolchain is needed at runtime, only the runtime
-# dependencies. pino-pretty is a devDependency loaded only when NODE_ENV=development, which prod
-# never sets, so omitting dev deps is safe.
-RUN pnpm install --frozen-lockfile --prod
+RUN pnpm install --frozen-lockfile
 
-# Uncompiled server source + built frontend. Node reads no tsconfig for type stripping, and the
-# wsdl files live under server/onvif and are read at runtime, so copying the server tree is enough.
 COPY server ./server
+COPY vite.config.ts ./
 COPY --from=build /app/dist ./dist
 
 CMD ["node", "server/index.ts"]

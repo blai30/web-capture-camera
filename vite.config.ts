@@ -26,6 +26,11 @@ export default defineConfig(({ command }) => ({
     port: parseInt(process.env.APP_PORT ?? '5173', 10),
     strictPort: true,
   },
+  preview: {
+    port: parseInt(process.env.APP_PORT ?? '5173', 10),
+    strictPort: true,
+    host: true,
+  },
   plugins: [command === 'build' ? stripDevImports() : null, preact(), tailwindcss()],
   resolve: {
     alias: {
