@@ -7,7 +7,7 @@ const ONVIF_VERSION = { major: 2, minor: 5 }
 // HTTP path on the ONVIF server that serves the current frame as a snapshot image.
 export const SNAPSHOT_PATH = '/onvif/snapshot'
 
-export type OnvifService = {
+type OnvifService = {
   name: 'Device' | 'Media'
   namespace: string
   xaddr: string

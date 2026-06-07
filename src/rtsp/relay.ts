@@ -18,7 +18,7 @@ export type NalClassification = {
 // Receives the H.264 RTP payload (the bytes after the generic RTP header), not the raw packet.
 export type PayloadClassifier = (rtpPayload: Buffer) => NalClassification
 
-export type SubscriberAdapter = {
+type SubscriberAdapter = {
   write: (bytes: Buffer) => boolean
   onDrain: (callback: () => void) => void
   rtpChannel: number
