@@ -3,8 +3,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "node --watch server/index.ts",
-    "start": "node server/index.ts",
+    "dev": "node --watch src/index.ts",
+    "start": "node src/index.ts",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
     "fmt": "oxfmt",

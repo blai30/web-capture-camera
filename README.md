@@ -17,9 +17,9 @@ CAPTURE_URL ──▶ headless Chromium ──▶ JPEG screenshot ──▶ ffmp
                                           ONVIF SOAP + WS-Discovery ────────────────┘
 ```
 
-- **Capture** (`server/publisher/capture.ts`): puppeteer loads `CAPTURE_URL` and screenshots it.
-- **Stream** (`server/publisher/stream.ts` + `server/rtsp/`): frames are piped through ffmpeg into an H.264 RTSP stream.
-- **ONVIF** (`server/onvif/`): a SOAP device/media server plus WS-Discovery so NVRs auto-discover the camera; the latest frame is also served as a JPEG snapshot.
+- **Capture** (`src/publisher/capture.ts`): puppeteer loads `CAPTURE_URL` and screenshots it.
+- **Stream** (`src/publisher/stream.ts` + `src/rtsp/`): frames are piped through ffmpeg into an H.264 RTSP stream.
+- **ONVIF** (`src/onvif/`): a SOAP device/media server plus WS-Discovery so NVRs auto-discover the camera; the latest frame is also served as a JPEG snapshot.
 
 ## Example use-case: weather dashboard
 
