@@ -23,17 +23,20 @@ const CHROMIUM_LAUNCH_ARGS = [
 export type CapturerOptions = {
   url: string
   viewport: { width: number; height: number }
+  /** How often the page is re-screenshotted into a fresh frame, in milliseconds. */
+  captureIntervalMs: number
 }
 
 /**
- * Drives a headless Chromium page and turns it into JPEG frames. Call `start()` to launch the
- * browser and load the page, then `captureFrame()` to grab a fresh frame; `getLatestFrame()`
- * returns the last grabbed one without re-screenshotting.
+ * Drives a headless Chromium page and turns it into JPEG frames. `start()` launches the browser,
+ * loads the page, captures the first frame, then refreshes it every `captureIntervalMs`.
+ * `getLatestFrame()` returns the current frame, shared by the snapshot endpoint and the encoder.
  */
 export function createCapturer(options: CapturerOptions) {
   let browser: Browser | null = null
   let page: Page | null = null
   let latestFrame: Uint8Array<ArrayBufferLike> | null = null
+  let captureInterval: NodeJS.Timeout | null = null
 
   async function start() {
     logger.info('Launching browser')
@@ -56,33 +59,35 @@ export function createCapturer(options: CapturerOptions) {
     // Give the page a moment to finish any initial animations/data loads
     logger.debug(`Waiting ${WAIT_BEFORE_FIRST_CAPTURE_MS}ms before first capture`)
     await new Promise((resolve) => setTimeout(resolve, WAIT_BEFORE_FIRST_CAPTURE_MS))
+
+    await captureFrame()
+    captureInterval = setInterval(() => {
+      captureFrame().catch((error) => logger.error(`Capture failed: ${error}`))
+    }, options.captureIntervalMs)
   }
 
-  /**
-   * Screenshot the page as JPEG, store it as the latest frame, and return it.
-   * @throws if called before `start()` has loaded the page.
-   */
+  // Screenshot the page as JPEG and store it as the latest frame. JPEG is required by the ONVIF
+  // spec for GetSnapshotUri responses (not PNG), and reused for the H.264 stream to keep one format.
   async function captureFrame() {
     if (!page) throw new Error('page renderer not started')
-    // JPEG is required by ONVIF spec for GetSnapshotUri responses (not PNG).
-    // Capture as JPEG for both the snapshot endpoint and H.264 stream to keep the pipeline simple.
     latestFrame = await page.screenshot({ type: 'jpeg', quality: 90 })
-    return latestFrame
+    logger.debug('Captured new frame')
   }
 
   /**
-   * The most recently captured frame, or null before the first capture. Shared with the ONVIF
-   * snapshot endpoint so a snapshot serves the exact frame already going out over the stream.
+   * The current frame, or null before the first capture. Shared by the ONVIF snapshot endpoint and
+   * the encoder so both serve the exact frame the capturer last grabbed.
    */
   function getLatestFrame(): Uint8Array<ArrayBufferLike> | null {
     return latestFrame
   }
 
   const asyncDispose = async () => {
+    if (captureInterval) clearInterval(captureInterval)
     if (browser) await browser.close()
   }
 
-  return { start, captureFrame, getLatestFrame, [Symbol.asyncDispose]: asyncDispose }
+  return { start, getLatestFrame, [Symbol.asyncDispose]: asyncDispose }
 }
 
 async function waitForUrl(url: string) {

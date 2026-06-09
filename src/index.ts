@@ -28,6 +28,7 @@ async function main() {
   await using capturer = createCapturer({
     url: CAPTURE_URL,
     viewport: { width: 1280, height: 720 },
+    captureIntervalMs: CAPTURE_INTERVAL_MS,
   })
 
   await using onvif = createOnvifServer(device, {
@@ -42,8 +43,7 @@ async function main() {
 
   await using stream = createStream({
     rtspUrl: RTSP_URL,
-    source: () => capturer.captureFrame(),
-    captureIntervalMs: CAPTURE_INTERVAL_MS,
+    source: () => capturer.getLatestFrame(),
   })
   await stream.start()
 

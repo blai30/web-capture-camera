@@ -6,28 +6,22 @@ const logger = createLogger('stream')
 
 const PUSH_INTERVAL_MS = 1000
 
-export type FrameSource = () => Promise<Uint8Array<ArrayBufferLike>>
+/** Returns the current frame to encode, or null if none has been captured yet. */
+export type FrameSource = () => Uint8Array<ArrayBufferLike> | null
 
 export type StreamOptions = {
   rtspUrl: string
-  /** Produces the next frame to encode, polled every `captureIntervalMs`. */
+  /** Returns the current frame to encode, or null if none has been captured yet. */
   source: FrameSource
-  /**
-   * How often a fresh frame is pulled from `source`, in milliseconds. Independent of the fixed
-   * 1 fps cadence at which the current frame is pushed into ffmpeg.
-   */
-  captureIntervalMs: number
 }
 
 /**
- * Spawns ffmpeg to encode captured frames as H.264 and publish them to an RTSP server. Pulls a new
- * frame from `source` every `captureIntervalMs` and pushes the current frame at a fixed 1 fps.
+ * Spawns ffmpeg to encode the current frame as H.264 and publish it to an RTSP server. Reads
+ * `source` and pushes whatever frame it holds at a fixed 1 fps; the source owns the capture cadence.
  */
 export function createStream(options: StreamOptions) {
   let ffmpeg: ChildProcess | null = null
-  let captureInterval: NodeJS.Timeout | null = null
   let pushInterval: NodeJS.Timeout | null = null
-  let latestFrame: Uint8Array<ArrayBufferLike> | null = null
 
   async function start() {
     logger.info(`Spawning ffmpeg, target: ${options.rtspUrl}`)
@@ -71,22 +65,15 @@ export function createStream(options: StreamOptions) {
       logger.info(`ffmpeg exited (code=${code}, signal=${signal})`)
     })
 
-    const captureFrame = async () => {
-      latestFrame = await options.source()
-      logger.debug('Captured new frame')
-    }
-
-    await captureFrame()
-    captureInterval = setInterval(captureFrame, options.captureIntervalMs)
     pushInterval = setInterval(() => {
-      if (latestFrame && ffmpeg && !ffmpeg.stdin?.destroyed) {
-        ffmpeg.stdin?.write(latestFrame, () => {})
+      const frame = options.source()
+      if (frame && ffmpeg && !ffmpeg.stdin?.destroyed) {
+        ffmpeg.stdin?.write(frame, () => {})
       }
     }, PUSH_INTERVAL_MS)
   }
 
   const asyncDispose = async () => {
-    if (captureInterval) clearInterval(captureInterval)
     if (pushInterval) clearInterval(pushInterval)
     if (ffmpeg) ffmpeg.kill()
   }
