@@ -3,6 +3,7 @@ import { classifyH264NalUnit } from './h264.ts'
 const INTERLEAVED_PREFIX = 0x24
 const DEFAULT_MAX_GOP_PACKETS = 512
 
+/** Thrown by the relay's `attachPublisher` when a publisher is already attached. */
 export class PublisherBusyError extends Error {
   constructor() {
     super('A publisher is already attached')
@@ -15,7 +16,7 @@ export type NalClassification = {
   isParameterSet: boolean
 }
 
-// Receives the H.264 RTP payload (the bytes after the generic RTP header), not the raw packet.
+/** Receives the H.264 RTP payload (the bytes after the generic RTP header), not the raw packet. */
 export type PayloadClassifier = (rtpPayload: Buffer) => NalClassification
 
 type SubscriberAdapter = {
@@ -24,8 +25,14 @@ type SubscriberAdapter = {
   rtpChannel: number
 }
 
+/** Controls one subscriber's delivery. Returned by the relay's `addSubscriber`. */
 export type SubscriberHandle = {
+  /**
+   * Start delivering RTP to this subscriber. If a keyframe is already buffered, the cached
+   * parameter sets and current GOP are replayed first so the subscriber can decode immediately.
+   */
   play: () => void
+  /** Stop delivery and remove this subscriber from the relay. */
   detach: () => void
 }
 
@@ -35,6 +42,18 @@ type SubscriberRecord = {
   backpressured: boolean
 }
 
+/**
+ * The fan-out hub between a single RTSP publisher and many subscribers. The publisher's interleaved
+ * RTP is parsed into packets, retained for keyframe catchup, and forwarded to every playing
+ * subscriber.
+ *
+ * Typical lifecycle: `attachPublisher(sdp)` once, then `pushPublisherBytes(chunk)` repeatedly;
+ * subscribers call `addSubscriber(...)` then `play()`, and may join at any time.
+ *
+ * @param options.maxGopPackets - Cap on packets retained per GOP, a runaway guard. Defaults to 512.
+ * @param options.classifyPayload - How an RTP payload is classified as IDR / parameter set.
+ *   Defaults to the H.264 classifier; injectable for other codecs or for tests.
+ */
 export function createStreamRelay(options?: {
   maxGopPackets?: number
   classifyPayload?: PayloadClassifier
@@ -57,6 +76,10 @@ export function createStreamRelay(options?: {
   let parameterSets: Buffer[] = []
   let collectingParameterSets = false
 
+  /**
+   * Register the sole publisher and its SDP, resetting any retained keyframe state.
+   * @throws {PublisherBusyError} if a publisher is already attached.
+   */
   function attachPublisher(sdp: string) {
     if (publisherAttached) throw new PublisherBusyError()
     publisherAttached = true
@@ -68,11 +91,13 @@ export function createStreamRelay(options?: {
     collectingParameterSets = false
   }
 
+  /** Release the publisher so a new one can attach. The last SDP is kept for a racing DESCRIBE. */
   function detachPublisher() {
     publisherAttached = false
     publisherBuffer = Buffer.alloc(0)
   }
 
+  /** The most recently announced publisher SDP, or null if none has ever attached. */
   function getSdp(): string | null {
     return publisherSdp
   }
@@ -129,6 +154,11 @@ export function createStreamRelay(options?: {
     }
   }
 
+  /**
+   * Feed raw RTSP-interleaved bytes from the publisher. Complete RTP packets on even (data)
+   * channels are retained for catchup and fanned out; a partial trailing frame is buffered until
+   * the next call.
+   */
   function pushPublisherBytes(chunk: Buffer) {
     const data = publisherBuffer.length > 0 ? Buffer.concat([publisherBuffer, chunk]) : chunk
     publisherBuffer = Buffer.alloc(0)
@@ -159,6 +189,10 @@ export function createStreamRelay(options?: {
     }
   }
 
+  /**
+   * Register a subscriber sink. Delivery does not start until the returned handle's `play()` is
+   * called.
+   */
   function addSubscriber(adapter: SubscriberAdapter): SubscriberHandle {
     const id = Symbol()
     const record: SubscriberRecord = {

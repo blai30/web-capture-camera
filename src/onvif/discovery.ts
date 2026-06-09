@@ -8,6 +8,10 @@ const logger = createLogger('ws-discovery')
 const MULTICAST_GROUP = '239.255.255.250'
 const DISCOVERY_PORT = 3702
 
+/**
+ * Answers WS-Discovery Probe multicasts so ONVIF clients (NVRs) discover this device on the LAN.
+ * Call `start()` to begin listening; replies are unicast back to each prober.
+ */
 export function createWsDiscovery(device: OnvifDevice) {
   const socket = dgram.createSocket({ type: 'udp4', reuseAddr: true })
 

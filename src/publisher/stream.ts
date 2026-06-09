@@ -10,10 +10,19 @@ export type FrameSource = () => Promise<Uint8Array<ArrayBufferLike>>
 
 export type StreamOptions = {
   rtspUrl: string
+  /** Produces the next frame to encode, polled every `captureIntervalMs`. */
   source: FrameSource
+  /**
+   * How often a fresh frame is pulled from `source`, in milliseconds. Independent of the fixed
+   * 1 fps cadence at which the current frame is pushed into ffmpeg.
+   */
   captureIntervalMs: number
 }
 
+/**
+ * Spawns ffmpeg to encode captured frames as H.264 and publish them to an RTSP server. Pulls a new
+ * frame from `source` every `captureIntervalMs` and pushes the current frame at a fixed 1 fps.
+ */
 export function createStream(options: StreamOptions) {
   let ffmpeg: ChildProcess | null = null
   let captureInterval: NodeJS.Timeout | null = null

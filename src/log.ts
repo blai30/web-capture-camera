@@ -23,8 +23,10 @@ const rootLogger = pino({
     : {}),
 }) as pino.Logger
 
-// Each module gets a child logger bound to its component name, which replaces the hand-written
-// `[Component]` string prefixes that used to live in every log call.
+/**
+ * Each module gets a child logger bound to its component name, which replaces the hand-written
+ * `[Component]` string prefixes that used to live in every log call.
+ */
 export function createLogger(component: string) {
   return rootLogger.child({ component })
 }

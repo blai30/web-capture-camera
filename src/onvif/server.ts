@@ -12,8 +12,16 @@ const logger = createLogger('onvif')
 const deviceWSDL = fs.readFileSync(new URL('wsdl/device_service.wsdl', import.meta.url), 'utf8')
 const mediaWSDL = fs.readFileSync(new URL('wsdl/media_service.wsdl', import.meta.url), 'utf8')
 
+/** Returns the current JPEG frame for the snapshot endpoint, or null before the first capture. */
 export type SnapshotSource = () => Uint8Array<ArrayBufferLike> | null
 
+/**
+ * Serves the ONVIF Device and Media SOAP services plus a JPEG snapshot endpoint over HTTP.
+ *
+ * @param device - The ONVIF device whose identity and SOAP responses are served.
+ * @param options.port - Port to listen on. Defaults to the configured ONVIF port.
+ * @param options.snapshotSource - Supplies the JPEG returned from the snapshot endpoint.
+ */
 export function createOnvifServer(
   device: OnvifDevice,
   options?: { port?: number; snapshotSource?: SnapshotSource }

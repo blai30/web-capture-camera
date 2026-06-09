@@ -4,7 +4,7 @@ const DEVICE_SERVICE_NAMESPACE = 'http://www.onvif.org/ver10/device/wsdl'
 const MEDIA_SERVICE_NAMESPACE = 'http://www.onvif.org/ver10/media/wsdl'
 const ONVIF_VERSION = { major: 2, minor: 5 }
 
-// HTTP path on the ONVIF server that serves the current frame as a snapshot image.
+/** HTTP path on the ONVIF server that serves the current frame as a snapshot image. */
 export const SNAPSHOT_PATH = '/onvif/snapshot'
 
 type OnvifService = {

@@ -11,8 +11,10 @@ const NAL_TYPE_MASK = 0x1f
 
 const EMPTY: NalClassification = { isIdr: false, isParameterSet: false }
 
-// Classifies an H.264 RTP payload (RFC 6184) by inspecting only its NAL headers, no reassembly.
-// The payload is the RTP packet body with the generic RTP header already stripped.
+/**
+ * Classifies an H.264 RTP payload (RFC 6184) by inspecting only its NAL headers, no reassembly.
+ * The payload is the RTP packet body with the generic RTP header already stripped.
+ */
 export function classifyH264NalUnit(rtpPayload: Buffer): NalClassification {
   if (rtpPayload.length < 1) return EMPTY
   const nalUnitType = rtpPayload[0] & NAL_TYPE_MASK

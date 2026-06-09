@@ -25,6 +25,11 @@ export type CapturerOptions = {
   viewport: { width: number; height: number }
 }
 
+/**
+ * Drives a headless Chromium page and turns it into JPEG frames. Call `start()` to launch the
+ * browser and load the page, then `captureFrame()` to grab a fresh frame; `getLatestFrame()`
+ * returns the last grabbed one without re-screenshotting.
+ */
 export function createCapturer(options: CapturerOptions) {
   let browser: Browser | null = null
   let page: Page | null = null
@@ -53,6 +58,10 @@ export function createCapturer(options: CapturerOptions) {
     await new Promise((resolve) => setTimeout(resolve, WAIT_BEFORE_FIRST_CAPTURE_MS))
   }
 
+  /**
+   * Screenshot the page as JPEG, store it as the latest frame, and return it.
+   * @throws if called before `start()` has loaded the page.
+   */
   async function captureFrame() {
     if (!page) throw new Error('page renderer not started')
     // JPEG is required by ONVIF spec for GetSnapshotUri responses (not PNG).
@@ -61,8 +70,10 @@ export function createCapturer(options: CapturerOptions) {
     return latestFrame
   }
 
-  // The most recently captured frame, or null before the first capture. Shared with the ONVIF
-  // snapshot endpoint so a snapshot serves the exact frame already going out over the stream.
+  /**
+   * The most recently captured frame, or null before the first capture. Shared with the ONVIF
+   * snapshot endpoint so a snapshot serves the exact frame already going out over the stream.
+   */
   function getLatestFrame(): Uint8Array<ArrayBufferLike> | null {
     return latestFrame
   }
