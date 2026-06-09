@@ -41,6 +41,8 @@ export function createOnvifDevice() {
   ]
 
   const urn = `urn:uuid:${onvifConfig.uuid}`
+  const streamUri = `rtsp://${onvifConfig.hostname}:${rtspConfig.port}${rtspConfig.path}`
+  const snapshotUri = `http://${onvifConfig.hostname}:${onvifConfig.port}${SNAPSHOT_PATH}`
 
   return {
     urn,
@@ -56,8 +58,8 @@ export function createOnvifDevice() {
     getSystemDateAndTime,
     getProfilesResponse,
     getVideoSources,
-    streamUri: `rtsp://${onvifConfig.hostname}:${rtspConfig.port}${rtspConfig.path}`,
-    snapshotUri: `http://${onvifConfig.hostname}:${onvifConfig.port}${SNAPSHOT_PATH}`,
+    getStreamUriResponse: () => buildMediaUriResponse(streamUri),
+    getSnapshotUriResponse: () => buildMediaUriResponse(snapshotUri),
   }
 }
 
@@ -137,6 +139,19 @@ function buildServicesResponse(services: OnvifService[]) {
       XAddr: service.xaddr,
       Version: { Major: service.version.major, Minor: service.version.minor },
     })),
+  }
+}
+
+// Wraps a media URI in the MediaUri envelope that ONVIF's GetStreamUri / GetSnapshotUri return.
+// The validity flags and timeout are static for this device.
+function buildMediaUriResponse(uri: string) {
+  return {
+    MediaUri: {
+      Uri: uri,
+      InvalidAfterConnect: false,
+      InvalidAfterReboot: false,
+      Timeout: 'PT30S',
+    },
   }
 }
 

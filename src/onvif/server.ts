@@ -67,22 +67,8 @@ export function createOnvifServer(
             Media: {
               GetProfiles: () => device.getProfilesResponse(),
               GetVideoSources: () => device.getVideoSources(),
-              GetStreamUri: () => ({
-                MediaUri: {
-                  Uri: device.streamUri,
-                  InvalidAfterConnect: false,
-                  InvalidAfterReboot: false,
-                  Timeout: 'PT30S',
-                },
-              }),
-              GetSnapshotUri: () => ({
-                MediaUri: {
-                  Uri: device.snapshotUri,
-                  InvalidAfterConnect: false,
-                  InvalidAfterReboot: false,
-                  Timeout: 'PT30S',
-                },
-              }),
+              GetStreamUri: () => device.getStreamUriResponse(),
+              GetSnapshotUri: () => device.getSnapshotUriResponse(),
             },
           },
         },
