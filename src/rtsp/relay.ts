@@ -1,6 +1,6 @@
 import { classifyH264NalUnit } from './h264.ts'
+import { interleavedHeader, parseInterleavedFrames } from './interleaved.ts'
 
-const INTERLEAVED_PREFIX = 0x24
 const DEFAULT_MAX_GOP_PACKETS = 512
 
 /** Thrown by the relay's `attachPublisher` when a publisher is already attached. */
@@ -155,37 +155,29 @@ export function createStreamRelay(options?: {
   }
 
   /**
+   * Ingest one fully de-framed RTP packet (the bytes after the interleaved header): retain it for
+   * keyframe catchup and fan it out to every playing subscriber. This is the packet-level seam that
+   * the byte-stream entry {@link pushPublisherBytes} feeds into.
+   */
+  function ingestPacket(packet: Buffer) {
+    retainForCatchup(packet)
+    fanoutPacket(packet)
+  }
+
+  /**
    * Feed raw RTSP-interleaved bytes from the publisher. Complete RTP packets on even (data)
-   * channels are retained for catchup and fanned out; a partial trailing frame is buffered until
-   * the next call.
+   * channels are de-framed and ingested; a partial trailing frame is buffered until the next call.
    */
   function pushPublisherBytes(chunk: Buffer) {
     const data = publisherBuffer.length > 0 ? Buffer.concat([publisherBuffer, chunk]) : chunk
-    publisherBuffer = Buffer.alloc(0)
+    const { frames, rest } = parseInterleavedFrames(data)
+    publisherBuffer = rest.length > 0 ? Buffer.from(rest) : Buffer.alloc(0)
 
-    let offset = 0
-    while (offset < data.length) {
-      if (data[offset] !== INTERLEAVED_PREFIX) {
-        offset++
-        continue
+    for (const frame of frames) {
+      // Even channels carry RTP media; odd channels carry RTCP, which the relay ignores.
+      if (frame.channel % 2 === 0) {
+        ingestPacket(Buffer.from(frame.payload))
       }
-      if (offset + 4 > data.length) break
-      const channel = data[offset + 1]
-      const length = (data[offset + 2] << 8) | data[offset + 3]
-      const end = offset + 4 + length
-      if (end > data.length) break
-      const payload = data.subarray(offset + 4, end)
-
-      if (channel % 2 === 0) {
-        const packet = Buffer.from(payload)
-        retainForCatchup(packet)
-        fanoutPacket(packet)
-      }
-      offset = end
-    }
-
-    if (offset < data.length) {
-      publisherBuffer = Buffer.from(data.subarray(offset))
     }
   }
 
@@ -226,6 +218,7 @@ export function createStreamRelay(options?: {
     attachPublisher,
     detachPublisher,
     pushPublisherBytes,
+    ingestPacket,
     getSdp,
     addSubscriber,
   }
@@ -245,12 +238,4 @@ function stripRtpHeader(packet: Buffer): Buffer | null {
   }
   if (packet.length <= headerLength) return null
   return packet.subarray(headerLength)
-}
-
-function interleavedHeader(channel: number, length: number): Buffer {
-  const buffer = Buffer.alloc(4)
-  buffer[0] = INTERLEAVED_PREFIX
-  buffer[1] = channel
-  buffer.writeUInt16BE(length, 2)
-  return buffer
 }
